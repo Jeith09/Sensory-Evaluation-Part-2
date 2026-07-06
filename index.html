@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SensoryLab — FSM 313 Interactive Program</title>
+<title>SensoryLab — Sensory Evaluation Interactive Program</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
@@ -373,7 +373,7 @@ label.fld{display:block;font-weight:700;margin-bottom:8px;font-size:.85rem;color
 <header class="topbar">
   <div class="logo">
     <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7l8-4 8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
-    <div><b>SensoryLab</b><div class="sub">FSM 313 · Interactive Program</div></div>
+    <div><b>SensoryLab</b><div class="sub"> · Interactive Program</div></div>
   </div>
   <div class="sp"></div>
   <div class="whoami" id="whoami"></div>
@@ -563,7 +563,7 @@ label.fld{display:block;font-weight:700;margin-bottom:8px;font-size:.85rem;color
           <div class="cdesc">Difference Testing · Descriptive Analysis · Affective Methods · Reporting Results</div>
           <div class="cscore">Final average score: <b id="certScore">—</b> · Modules completed: 4 of 4</div>
           <div class="cfoot">
-            <div><div class="sig">Course Instructor</div>FSM 313 · Sensory Evaluation</div>
+            <div><div class="sig">Course Instructor</div> · Sensory Evaluation</div>
             <div><span id="certDate">Date</span><br>Date of completion</div>
           </div>
         </div>
@@ -584,7 +584,7 @@ label.fld{display:block;font-weight:700;margin-bottom:8px;font-size:.85rem;color
 <div class="toast" id="toast"></div>
 <script>
 /* =========================================================
-   SensoryLab — FSM 313 Interactive Program
+   SensoryLab — Sensory Evaluation Interactive Program
    Single-purpose app logic + content
    ========================================================= */
 
@@ -1602,7 +1602,7 @@ function downloadCertCanvasPDF(name,score,date){
   x.font=`bold ${13*scale}px Georgia`; x.fillStyle="#14261c";
   x.fillText("Course Instructor",82.5*scale,176*scale); x.fillText(date,(W-82.5*scale),176*scale);
   x.font=`${8.5*scale}px Helvetica,Arial`; x.fillStyle="#5c6b60";
-  x.fillText("FSM 313 · Sensory Evaluation",82.5*scale,184*scale);
+  x.fillText("Sensory Evaluation · Sensory Evaluation",82.5*scale,184*scale);
   x.fillText("Date of completion",(W-82.5*scale),184*scale);
 
   const jpg=c.toDataURL("image/jpeg",0.92);
@@ -1690,7 +1690,7 @@ function downloadPDF(){
   doc.text("Course Instructor",82.5,176,{align:"center"});
   doc.text(date,W-82.5,176,{align:"center"});
   doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(92,107,96);
-  doc.text("FSM 313 \u00B7 Sensory Evaluation",82.5,183,{align:"center"});
+  doc.text("Sensory Evaluation \u00B7 Sensory Evaluation",82.5,183,{align:"center"});
   doc.text("Date of completion",W-82.5,183,{align:"center"});
   doc.save("Certificate_"+name.replace(/\s+/g,"_")+".pdf");
   toast("Certificate PDF downloaded.");
