@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SensoryLab — FSM 313 Interactive Program</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0e0f13; --bg2:#15161c; --panel:#1a1c24; --panel2:#20222c;
+  --line:#2a2d38; --line2:#343846;
+  --txt:#eef1f6; --txt2:#aab2c5; --txt3:#727a8f;
+  --mint:#25e0a4; --mint2:#12b98a; --teal:#2bd4d4; --lime:#a8e85a;
+  --coral:#ff7a59; --gold:#ffcf5c; --violet:#8b7bff;
+  --grad:linear-gradient(120deg,#25e0a4,#2bd4d4 55%,#8b7bff);
+  --grad-warm:linear-gradient(120deg,#ff7a59,#ffcf5c);
+  --ok:#25e0a4; --bad:#ff6b6b;
+  --r:18px; --r-lg:26px;
+  --shadow:0 20px 50px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(43,212,212,.10), transparent 60%),
+    radial-gradient(1000px 600px at -10% 20%, rgba(139,123,255,.10), transparent 55%),
+    var(--bg);
+  color:var(--txt); line-height:1.6; min-height:100vh; letter-spacing:.1px;
+}
+h1,h2,h3,h4{font-weight:800;letter-spacing:-.02em;line-height:1.18;color:var(--txt);margin:0}
+h1{font-size:clamp(1.8rem,4.5vw,2.7rem)}
+p{margin:.5em 0}
+a{color:var(--mint);text-decoration:none}
+.hidden{display:none !important}
+.wrap{max-width:1000px;margin:0 auto;padding:22px 18px 100px}
+::selection{background:rgba(37,224,164,.3)}
+:focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:8px}
+
+.ic{width:1.15em;height:1.15em;stroke:currentColor;stroke-width:2;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.18em;flex:none}
+.ic.big{width:22px;height:22px}
+
+.topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+  background:rgba(14,15,19,.78);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:12px;padding:11px 18px}
+.logo{display:flex;align-items:center;gap:11px}
+.logo .mark{width:34px;height:34px;border-radius:11px;background:var(--grad);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(37,224,164,.35)}
+.logo .mark svg{width:19px;height:19px;stroke:#08110d;stroke-width:2.4}
+.logo b{font-size:1.05rem;font-weight:800;letter-spacing:-.02em}
+.logo .sub{font-size:.62rem;letter-spacing:2.5px;color:var(--txt3);text-transform:uppercase;font-weight:700}
+.topbar .sp{flex:1}
+.whoami{display:flex;align-items:center;gap:9px;font-size:.85rem}
+.whoami .av{width:32px;height:32px;border-radius:50%;background:var(--grad-warm);
+  display:flex;align-items:center;justify-content:center;color:#3a1400;font-weight:800;font-size:.85rem}
+.whoami .nm{font-weight:700;line-height:1.1}
+.whoami .rl{font-size:.66rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+
+.rail{position:sticky;top:57px;z-index:40;background:rgba(14,15,19,.7);backdrop-filter:blur(8px);
+  padding:9px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px}
+.rail .lbl{font-size:.72rem;color:var(--txt2);font-weight:700;white-space:nowrap}
+.track{flex:1;height:7px;background:#23252f;border-radius:99px;overflow:hidden}
+.fill{height:100%;width:0;background:var(--grad);border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.rail .pct{font-size:.75rem;font-weight:800;color:var(--mint);min-width:38px;text-align:right}
+
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:28px;box-shadow:var(--shadow);margin-bottom:20px}
+.eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:.7rem;font-weight:800;
+  letter-spacing:2px;text-transform:uppercase;color:var(--mint);margin-bottom:12px}
+.eyebrow.warm{color:var(--gold)}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:700;
+  padding:5px 11px;border-radius:99px;background:var(--panel2);border:1px solid var(--line2);color:var(--txt2)}
+.chip.mint{background:rgba(37,224,164,.12);border-color:rgba(37,224,164,.3);color:var(--mint)}
+.chip.gold{background:rgba(255,207,92,.12);border-color:rgba(255,207,92,.3);color:var(--gold)}
+.chip.violet{background:rgba(139,123,255,.14);border-color:rgba(139,123,255,.35);color:#b3a8ff}
+
+button,.btn{font-family:inherit;cursor:pointer;border:none;border-radius:13px;font-weight:800;
+  font-size:.95rem;padding:13px 22px;display:inline-flex;align-items:center;justify-content:center;
+  gap:9px;transition:transform .12s ease,box-shadow .2s,background .2s,opacity .2s;letter-spacing:.1px}
+button:active,.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--grad);color:#08120d;box-shadow:0 10px 26px rgba(37,224,164,.28)}
+.btn-primary:hover{box-shadow:0 14px 34px rgba(37,224,164,.42)}
+.btn-warm{background:var(--grad-warm);color:#3a1400;box-shadow:0 10px 26px rgba(255,122,89,.28)}
+.btn-ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line2)}
+.btn-ghost:hover{background:#272a35;border-color:#40465a}
+.btn-outline{background:transparent;color:var(--mint);border:1.5px solid rgba(37,224,164,.4)}
+.btn-outline:hover{background:rgba(37,224,164,.08)}
+.btn-sm{padding:9px 15px;font-size:.82rem;border-radius:11px}
+.btn:disabled,button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.btnrow{display:flex;gap:11px;flex-wrap:wrap;margin-top:20px}
+.btnrow.center{justify-content:center}
+
+input[type=text]{width:100%;padding:14px 16px;border:1.5px solid var(--line2);border-radius:13px;
+  font-size:1rem;font-family:inherit;background:var(--bg2);color:var(--txt)}
+input[type=text]::placeholder{color:var(--txt3)}
+input[type=text]:focus{outline:none;border-color:var(--mint);box-shadow:0 0 0 4px rgba(37,224,164,.12)}
+label.fld{display:block;font-weight:700;margin-bottom:8px;font-size:.85rem;color:var(--txt2)}
+
+.hero{position:relative;overflow:hidden;text-align:center;
+  background:linear-gradient(180deg,#181b24,#111219);border:1px solid var(--line2)}
+.hero::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(600px 300px at 50% -20%, rgba(37,224,164,.18), transparent 65%);pointer-events:none}
+.hero-inner{position:relative;z-index:2;padding:14px 8px}
+.hero h1{margin:.2em 0}
+.hero .grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .lead{color:var(--txt2);font-size:1.05rem;max-width:600px;margin:12px auto 0}
+.orb{position:absolute;width:220px;height:220px;border-radius:50%;filter:blur(60px);opacity:.35;z-index:0}
+.entry{max-width:440px;margin:26px auto 0;text-align:left}
+.or{display:flex;align-items:center;gap:12px;color:var(--txt3);margin:20px 0;font-size:.72rem;
+  font-weight:700;letter-spacing:2px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line2)}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:26px}
+.feat .f{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:16px;text-align:left}
+.feat .f .ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.feat .f h4{font-size:.92rem}
+.feat .f p{font-size:.78rem;color:var(--txt3);margin:.3em 0 0}
+
+.docwall{position:relative;border-radius:var(--r-lg);overflow:hidden;margin:18px 0;
+  background:linear-gradient(135deg,rgba(255,122,89,.10),rgba(255,207,92,.06));
+  border:1px solid rgba(255,122,89,.28)}
+.docwall-head{display:flex;align-items:center;gap:13px;padding:16px 20px;
+  background:rgba(255,122,89,.10);border-bottom:1px solid rgba(255,122,89,.2)}
+.docwall-head .badge{width:42px;height:42px;border-radius:12px;background:var(--grad-warm);
+  display:flex;align-items:center;justify-content:center;flex:none}
+.docwall-head .badge svg{width:22px;height:22px;stroke:#3a1400;stroke-width:2.2}
+.docwall-head h3{font-size:1.05rem}
+.docwall-head p{font-size:.8rem;color:var(--txt2);margin:2px 0 0}
+.docwall-body{padding:6px 20px 18px}
+.stepline{display:flex;gap:14px;padding:13px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.stepline:last-child{border-bottom:none}
+.stepline .n{width:30px;height:30px;border-radius:9px;flex:none;background:var(--panel);
+  border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:.82rem;color:var(--gold)}
+.stepline .tx b{display:block;font-size:.92rem}
+.stepline .tx span{font-size:.82rem;color:var(--txt2)}
+
+.note{display:flex;gap:12px;background:var(--panel2);border:1px solid var(--line2);
+  border-radius:16px;padding:15px 17px;font-size:.9rem;color:var(--txt2);margin:16px 0}
+.note .ni{color:var(--mint);flex:none;margin-top:2px}
+.note.warm .ni{color:var(--gold)}
+.note b{color:var(--txt)}
+
+.checks{margin:16px 0}
+.checkitem{display:flex;gap:13px;align-items:flex-start;padding:14px 15px;border-radius:14px;
+  background:var(--panel2);border:1px solid var(--line);margin-bottom:9px;cursor:pointer;transition:.15s}
+.checkitem:hover{border-color:var(--line2)}
+.checkitem.on{border-color:rgba(37,224,164,.4);background:rgba(37,224,164,.07)}
+.cbox{width:24px;height:24px;border-radius:8px;border:2px solid var(--line2);flex:none;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;transition:.15s;background:var(--bg2)}
+.checkitem.on .cbox{background:var(--grad);border-color:transparent}
+.cbox svg{width:14px;height:14px;stroke:#08120d;stroke-width:3;opacity:0;transition:.15s}
+.checkitem.on .cbox svg{opacity:1}
+.checkitem .ctx{font-size:.9rem;color:var(--txt);font-weight:500}
+
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 6px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:16px 14px}
+.stat .n{font-size:1.7rem;font-weight:800;letter-spacing:-.03em;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat .l{font-size:.68rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-top:2px}
+.modlist{display:flex;flex-direction:column;gap:13px;margin-top:18px}
+.mod{display:flex;gap:16px;align-items:center;background:var(--panel2);border:1px solid var(--line);
+  border-radius:18px;padding:16px 18px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+.mod:hover{transform:translateY(-2px);border-color:var(--line2);box-shadow:0 12px 30px rgba(0,0,0,.3)}
+.mod.locked{opacity:.5;cursor:not-allowed}
+.mod.locked:hover{transform:none;box-shadow:none}
+.mod .glyph{width:52px;height:52px;border-radius:15px;flex:none;display:flex;align-items:center;justify-content:center;
+  background:var(--panel);border:1px solid var(--line2);position:relative}
+.mod.done .glyph{background:var(--grad);border-color:transparent}
+.mod.done .glyph svg{stroke:#08120d}
+.mod .glyph svg{width:24px;height:24px;stroke:var(--mint);stroke-width:2}
+.mod .meta{flex:1;min-width:0}
+.mod .meta h3{font-size:1.06rem}
+.mod .meta .d{font-size:.8rem;color:var(--txt3);margin-top:2px}
+.mod .meta .tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.mod .st{font-size:.72rem;font-weight:800;padding:6px 12px;border-radius:99px;white-space:nowrap}
+.st.todo{background:var(--panel);color:var(--txt2);border:1px solid var(--line2)}
+.st.done{background:rgba(37,224,164,.14);color:var(--mint)}
+.st.lock{background:var(--panel);color:var(--txt3)}
+.mprog{height:4px;background:#23252f;border-radius:99px;margin-top:10px;overflow:hidden}
+.mprog i{display:block;height:100%;background:var(--grad);border-radius:99px}
+
+.lhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.crumb{font-size:.72rem;color:var(--txt3);letter-spacing:1.5px;text-transform:uppercase;font-weight:700}
+.stepdots{display:flex;gap:7px;align-items:center;margin:6px 0 18px;flex-wrap:wrap}
+.sd{height:6px;border-radius:99px;background:#2a2d38;transition:.3s;width:22px}
+.sd.seen{background:var(--mint2)}
+.sd.active{background:var(--grad);width:40px}
+.lesson h2{font-size:1.55rem;margin-bottom:.35em}
+.lesson h3{font-size:1.12rem;margin:1.5em 0 .4em;color:var(--txt);display:flex;align-items:center;gap:9px}
+.lesson h3 .hb{width:26px;height:26px;border-radius:8px;background:rgba(37,224,164,.12);
+  display:flex;align-items:center;justify-content:center;flex:none}
+.lesson h3 .hb svg{width:15px;height:15px;stroke:var(--mint);stroke-width:2.2}
+.lesson p{color:var(--txt2)}
+.lesson ul{margin:.5em 0;padding-left:4px;list-style:none}
+.lesson ul li{position:relative;padding-left:24px;margin:.5em 0;color:var(--txt2)}
+.lesson ul li::before{content:"";position:absolute;left:4px;top:.62em;width:7px;height:7px;
+  border-radius:2px;background:var(--grad);transform:rotate(45deg)}
+.lesson strong,.lesson b{color:var(--txt);font-weight:700}
+.kw{background:rgba(139,123,255,.16);color:#c0b7ff;border-radius:6px;padding:1px 7px;font-weight:700}
+.plain{background:rgba(43,212,212,.14);color:#7fe6e6;border-radius:6px;padding:1px 7px;font-weight:600;font-size:.9em}
+
+.eli5{background:linear-gradient(135deg,rgba(43,212,212,.08),rgba(37,224,164,.05));
+  border:1px solid rgba(43,212,212,.25);border-radius:16px;padding:16px 18px;margin:16px 0}
+.eli5 .tag{display:inline-flex;align-items:center;gap:7px;font-size:.68rem;font-weight:800;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--teal);margin-bottom:7px}
+.eli5 p{margin:.2em 0;color:var(--txt)}
+
+.example{background:var(--panel2);border:1px solid var(--line2);border-radius:16px;padding:17px 19px;margin:17px 0}
+.example .tag{display:inline-flex;align-items:center;gap:7px;font-size:.68rem;font-weight:800;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--gold);margin-bottom:9px}
+.example p{margin:.35em 0;font-size:.9rem}
+.analogy{border-left:3px solid var(--violet);padding:4px 0 4px 16px;margin:16px 0;color:var(--txt2);font-style:italic}
+.analogy b{font-style:normal;color:var(--txt)}
+
+.reslist{display:grid;gap:10px;margin:14px 0}
+.res{display:flex;align-items:center;gap:13px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:14px;padding:13px 15px;transition:.15s}
+.res:hover{border-color:var(--line2);transform:translateX(3px)}
+.res .ri{width:40px;height:40px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center}
+.res .ri.yt{background:rgba(255,107,107,.14)} .res .ri.yt svg{stroke:#ff6b6b}
+.res .ri.web{background:rgba(43,212,212,.14)} .res .ri.web svg{stroke:var(--teal)}
+.res .ri.pdf{background:rgba(255,207,92,.14)} .res .ri.pdf svg{stroke:var(--gold)}
+.res .ri svg{width:20px;height:20px;stroke-width:2}
+.res .rt{flex:1;min-width:0}
+.res .rt b{font-size:.9rem;display:block;color:var(--txt)}
+.res .rt span{font-size:.76rem;color:var(--txt3)}
+.res .go{color:var(--txt3)}
+
+.figure{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:18px;margin:18px 0;text-align:center}
+.figure svg{max-width:100%;height:auto}
+.figure .cap{font-size:.78rem;color:var(--txt3);margin-top:10px}
+
+.lnav{display:flex;justify-content:space-between;gap:11px;margin-top:24px;flex-wrap:wrap}
+
+.drillwrap{background:var(--panel2);border:1px solid var(--line2);border-radius:18px;padding:20px;margin:18px 0}
+.drillwrap .dh{display:flex;align-items:center;gap:11px;margin-bottom:6px}
+.drillwrap .dh .di{width:40px;height:40px;border-radius:12px;background:var(--grad);display:flex;
+  align-items:center;justify-content:center;flex:none}
+.drillwrap .dh .di svg{width:21px;height:21px;stroke:#08120d;stroke-width:2.3}
+.drillwrap .dh h3{font-size:1.05rem;margin:0}
+.drillwrap .dh p{font-size:.78rem;color:var(--txt3);margin:0}
+
+.matchgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px}
+.mcol h4{font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--txt3);margin-bottom:10px}
+.mterm,.mdef{padding:12px 14px;border-radius:12px;border:1.5px solid var(--line2);margin-bottom:9px;
+  font-size:.85rem;cursor:pointer;transition:.15s;background:var(--panel)}
+.mterm{font-weight:700}
+.mterm.sel{border-color:var(--mint);background:rgba(37,224,164,.1)}
+.mterm.matched,.mdef.matched{opacity:.4;pointer-events:none;border-style:dashed}
+.mdef:hover,.mterm:hover{border-color:var(--line2)}
+.mdef.sel{border-color:var(--teal);background:rgba(43,212,212,.1)}
+.mdef.wrong{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.flash{margin:16px 0}
+.flashcard{position:relative;height:180px;cursor:pointer;transition:transform .5s;transform-style:preserve-3d}
+.flashcard.flipped{transform:rotateY(180deg)}
+.flashface{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;padding:22px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  border:1px solid var(--line2)}
+.flashfront{background:linear-gradient(135deg,var(--panel),var(--bg2))}
+.flashfront .q{font-size:1.15rem;font-weight:800}
+.flashfront small,.flashback small{position:absolute;bottom:12px;font-size:.68rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.5px}
+.flashback{background:linear-gradient(135deg,rgba(37,224,164,.12),rgba(43,212,212,.06));
+  border-color:rgba(37,224,164,.3);transform:rotateY(180deg)}
+.flashback .a{font-size:.95rem;color:var(--txt)}
+.flashnav{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:12px}
+.flashnav .cnt{font-size:.8rem;color:var(--txt3);font-weight:700}
+
+.seqlist{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.seqitem{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:12px;
+  background:var(--panel);border:1.5px solid var(--line2);cursor:grab;transition:border-color .15s,background .15s}
+.seqitem.dragging{opacity:.4;border-style:dashed}
+.seqitem.over{border-color:var(--mint)}
+.seqitem .gr{color:var(--txt3);flex:none}
+.seqitem .sx{flex:1;font-size:.88rem;font-weight:600}
+.seqitem .pos{width:26px;height:26px;border-radius:8px;background:var(--panel2);border:1px solid var(--line2);
+  display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;color:var(--txt3);flex:none}
+.seqitem.correct{border-color:var(--mint);background:rgba(37,224,164,.08)}
+.seqitem.correct .pos{background:var(--grad);color:#08120d;border-color:transparent}
+
+.simstage{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:22px;margin:16px 0}
+.simscene{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:18px 0}
+.samplecup{width:92px;cursor:pointer;text-align:center;transition:transform .15s}
+.samplecup:hover{transform:translateY(-4px)}
+.samplecup.chosen .cupbody{border-color:var(--mint);box-shadow:0 0 0 4px rgba(37,224,164,.18)}
+.samplecup.dim{opacity:.4}
+.cupbody{height:84px;border-radius:8px 8px 20px 20px;border:2px solid var(--line2);
+  background:linear-gradient(180deg,var(--panel2),var(--panel));display:flex;align-items:flex-end;
+  justify-content:center;position:relative;overflow:hidden}
+.cupbody .liquid{width:100%;transition:.3s}
+.cupcode{font-weight:800;font-size:.9rem;margin-top:8px;letter-spacing:1px}
+.simreadout{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+  font-size:.86rem;font-family:'SFMono-Regular',Consolas,monospace;color:var(--txt2);margin-top:14px;white-space:pre-wrap;line-height:1.7}
+.simreadout .hl{color:var(--mint);font-weight:700}
+.simreadout .warnc{color:var(--gold)}
+.panelmeter{display:flex;align-items:center;gap:12px;margin:14px 0}
+.pmbar{flex:1;height:22px;border-radius:99px;background:#23252f;overflow:hidden;position:relative}
+.pmbar i{display:block;height:100%;background:var(--grad);border-radius:99px;transition:width .4s;width:0}
+.pmbar .thresh{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--gold)}
+.slider{width:100%;accent-color:var(--mint)}
+.simrow{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.simrow label{font-size:.82rem;color:var(--txt2);font-weight:600}
+.bignum{font-size:2rem;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+.q{margin:16px 0;padding:18px;border:1px solid var(--line2);border-radius:16px;background:var(--panel2)}
+.qtext{font-weight:700;margin-bottom:12px;display:flex;gap:9px}
+.qtext .qn{color:var(--mint);font-weight:800;flex:none}
+.opt{display:flex;align-items:center;gap:11px;padding:12px 15px;border:1.5px solid var(--line2);
+  border-radius:12px;margin:8px 0;cursor:pointer;transition:.13s;background:var(--panel)}
+.opt:hover{border-color:#40465a}
+.opt.sel{border-color:var(--mint);background:rgba(37,224,164,.08)}
+.opt.correct{border-color:var(--ok);background:rgba(37,224,164,.12)}
+.opt.wrong{border-color:var(--bad);background:rgba(255,107,107,.1)}
+.opt .rd{width:20px;height:20px;border-radius:50%;border:2px solid var(--line2);flex:none;
+  display:flex;align-items:center;justify-content:center;transition:.15s}
+.opt.sel .rd{border-color:var(--mint)}
+.opt.sel .rd::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--grad)}
+.opt .ox{font-size:.9rem}
+.quizresult{font-size:1rem;font-weight:800;text-align:center;padding:16px;border-radius:16px;margin-top:16px}
+.quizresult.pass{background:rgba(37,224,164,.12);color:var(--mint);border:1px solid rgba(37,224,164,.3)}
+.quizresult.fail{background:rgba(255,107,107,.1);color:#ff9a9a;border:1px solid rgba(255,107,107,.3)}
+
+.certframe{background:#fbf9f2;color:#14261c;border-radius:14px;overflow:hidden;position:relative;
+  aspect-ratio:297/210;box-shadow:0 30px 70px rgba(0,0,0,.5)}
+.certframe .inner{position:absolute;inset:0;padding:5% 7%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  background:
+    radial-gradient(circle at 8% 10%, rgba(37,180,140,.12), transparent 32%),
+    radial-gradient(circle at 92% 90%, rgba(255,180,80,.14), transparent 32%);}
+.certframe::before{content:"";position:absolute;inset:14px;border:2px solid #1c6b4b;border-radius:8px}
+.certframe::after{content:"";position:absolute;inset:22px;border:1px solid #c9a94e;border-radius:5px}
+.cbadge{width:9%;min-width:60px;aspect-ratio:1;border-radius:50%;background:conic-gradient(from 0deg,#1c6b4b,#25b48c,#c9a94e,#1c6b4b);
+  display:flex;align-items:center;justify-content:center;margin-bottom:1.5%;padding:3px}
+.cbadge .inner2{width:100%;height:100%;border-radius:50%;background:#fbf9f2;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-weight:800;color:#1c6b4b;line-height:1;font-size:.55vw}
+.certframe h4{font-size:1.3vw;letter-spacing:.35vw;color:#1c6b4b;text-transform:uppercase;font-weight:800}
+.certframe .cby{font-size:.85vw;color:#5c6b60;margin:.6vw 0 .2vw}
+.certframe .cname{font-family:Cambria,Georgia,serif;font-size:2.6vw;color:#14261c;font-weight:800;
+  border-bottom:2px solid #c9a94e;padding:.3vw 3vw;margin:.4vw 0}
+.certframe .ctitle{font-size:1.7vw;font-weight:800;color:#1c6b4b;margin:.6vw 0 .2vw}
+.certframe .cdesc{font-size:.82vw;color:#41514a;font-style:italic}
+.certframe .cscore{font-size:.82vw;color:#5c6b60;margin-top:.5vw}
+.certframe .cfoot{display:flex;justify-content:space-between;width:78%;margin-top:2.4vw}
+.certframe .cfoot div{border-top:1.5px solid #14261c;padding-top:.4vw;font-size:.72vw;color:#5c6b60;min-width:26%}
+.certframe .cfoot .sig{font-family:Cambria,serif;font-size:1.05vw;color:#14261c;font-weight:700}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(140px);
+  background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:14px 20px;
+  border-radius:14px;box-shadow:var(--shadow);font-size:.9rem;font-weight:600;z-index:90;
+  transition:transform .4s cubic-bezier(.2,.9,.3,1),opacity .3s;opacity:0;display:flex;align-items:center;gap:10px;max-width:90vw}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast .ti{color:var(--mint);flex:none}
+
+.savebar{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+
+@media(max-width:640px){
+  .card{padding:20px}
+  .statgrid{grid-template-columns:1fr 1fr}
+  .feat{grid-template-columns:1fr 1fr}
+  .whoami .rl{display:none}
+  .matchgrid{grid-template-columns:1fr}
+}
+@media(max-width:420px){.feat{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7l8-4 8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4"/><path d="M4 17l8 4 8-4"/></svg></div>
+    <div><b>SensoryLab</b><div class="sub">FSM 313 · Interactive Program</div></div>
+  </div>
+  <div class="sp"></div>
+  <div class="whoami" id="whoami"></div>
+</header>
+
+<div class="rail hidden" id="rail">
+  <span class="lbl" id="railLbl">Your progress</span>
+  <div class="track"><div class="fill" id="railFill"></div></div>
+  <span class="pct" id="railPct">0%</span>
+</div>
+
+<div class="wrap">
+
+<section id="view-welcome">
+  <div class="card hero">
+    <div class="orb" style="background:#25e0a4;top:-60px;left:-40px"></div>
+    <div class="orb" style="background:#8b7bff;bottom:-80px;right:-40px"></div>
+    <div class="hero-inner">
+      <span class="chip mint" style="margin-bottom:16px"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.4 2.3 7.2L12 16.6 5.7 21l2.3-7.2-6-4.4h7.6z"/></svg> Self-paced · Learn by doing</span>
+      <h1>Master <span class="grad-text">Sensory Evaluation</span><br>the hands-on way</h1>
+      <p class="lead">A guided journey through how food scientists measure taste, aroma, texture and preference — built for total beginners, with drills, simulations and a certificate at the finish line.</p>
+      <div class="entry">
+        <label class="fld">What should we call you?</label>
+        <input type="text" id="nameInput" placeholder="Enter your full name" autocomplete="name">
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn-primary" style="flex:1" onclick="startNew()">Start learning
+            <svg class="ic big" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="or">RETURNING?</div>
+        <label class="btn btn-outline" style="width:100%;cursor:pointer">
+          <svg class="ic big" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          Load your saved progress file
+          <input type="file" accept=".json,application/json" style="display:none" onchange="loadProgress(event)"></label>
+      </div>
+      <div class="feat">
+        <div class="f"><div class="ico" style="background:rgba(37,224,164,.14)"><svg class="ic big" viewBox="0 0 24 24" style="stroke:#25e0a4"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></div><h4>4 clear modules</h4><p>From zero knowledge to confident, one small step at a time.</p></div>
+        <div class="f"><div class="ico" style="background:rgba(43,212,212,.14)"><svg class="ic big" viewBox="0 0 24 24" style="stroke:#2bd4d4"><path d="M14.7 6.3a4 4 0 010 5.6l-1.4 1.4a4 4 0 01-5.6 0M9.3 17.7a4 4 0 010-5.6l1.4-1.4a4 4 0 015.6 0"/></svg></div><h4>Drills & games</h4><p>Match, flip, order and play your way to real mastery.</p></div>
+        <div class="f"><div class="ico" style="background:rgba(139,123,255,.16)"><svg class="ic big" viewBox="0 0 24 24" style="stroke:#8b7bff"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0H5a2 2 0 01-2-2v-4m6 6h10a2 2 0 002-2v-4"/></svg></div><h4>Live simulations</h4><p>Run real sensory tests and feel like an expert in the lab.</p></div>
+        <div class="f"><div class="ico" style="background:rgba(255,207,92,.14)"><svg class="ic big" viewBox="0 0 24 24" style="stroke:#ffcf5c"><circle cx="12" cy="8" r="6"/><path d="M8.2 13.4L7 22l5-3 5 3-1.2-8.6"/></svg></div><h4>Real certificate</h4><p>Finish everything and download a printable PDF certificate.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="view-instructions" class="hidden">
+  <div class="card">
+    <span class="eyebrow"><span class="dot"></span> Read me first</span>
+    <h1>How this program works</h1>
+    <p style="color:var(--txt2)">Welcome, <b id="greetName" style="color:var(--txt)">learner</b>. Take two minutes to read this — it explains everything you need, including how to document your work.</p>
+    <h3 style="display:flex;align-items:center;gap:10px;margin-top:26px;font-size:1.1rem">
+      <svg class="ic big" viewBox="0 0 24 24" style="stroke:var(--mint)"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg> The learning path</h3>
+    <ul class="lesson" style="padding-left:0">
+      <li>There are <b>4 modules</b>. Work through them <b>in order</b> — finishing one unlocks the next.</li>
+      <li>Each module mixes short <b>lessons</b>, <b>interactive drills</b>, a hands-on <b>simulation</b>, and a final <b>knowledge check</b>.</li>
+      <li>Score <b>70% or higher</b> on the check to complete a module. Retake it as often as you like — no penalty.</li>
+      <li>Everything is written for someone starting from <b>zero</b>. We build up slowly before anything technical.</li>
+    </ul>
+    <h3 style="display:flex;align-items:center;gap:10px;margin-top:22px;font-size:1.1rem">
+      <svg class="ic big" viewBox="0 0 24 24" style="stroke:var(--teal)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Saving & resuming</h3>
+    <ul class="lesson" style="padding-left:0">
+      <li>Tap <b>Save progress</b> any time to download a small <b>.json file</b> — your personal bookmark.</li>
+      <li>To continue later, return to the welcome screen and use <b>Load progress</b> with that same file.</li>
+    </ul>
+    <div class="docwall">
+      <div class="docwall-head">
+        <div class="badge"><svg viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <div><h3>Photo-documentation is required</h3><p>Because this class is asynchronous, your instructor needs proof that <b>you</b> did the work.</p></div>
+      </div>
+      <div class="docwall-body">
+        <div class="stepline"><div class="n">1</div><div class="tx"><b>Before you begin</b><span>A photo of you at your study area / workstation.</span></div></div>
+        <div class="stepline"><div class="n">2</div><div class="tx"><b>While you learn</b><span>At least one photo mid-way, actively working through a module.</span></div></div>
+        <div class="stepline"><div class="n">3</div><div class="tx"><b>At the finish</b><span>A photo of you with your generated certificate on screen.</span></div></div>
+      </div>
+    </div>
+    <p style="color:var(--txt3);font-size:.85rem">You'll be reminded at each stage. Keep these photos together — they're your evidence of honest, independent work. Submit them to your instructor the way they've asked (email or your LMS).</p>
+    <h3 style="display:flex;align-items:center;gap:10px;margin-top:22px;font-size:1.1rem">
+      <svg class="ic big" viewBox="0 0 24 24" style="stroke:var(--gold)"><circle cx="12" cy="8" r="6"/><path d="M8.2 13.4L7 22l5-3 5 3-1.2-8.6"/></svg> Your certificate</h3>
+    <p style="color:var(--txt2)">Finish all four modules (each passed at 70%+) and confirm your documentation to unlock a personalized <b>Certificate of Completion</b> — a one-page A4 PDF you can print or submit.</p>
+    <div class="btnrow">
+      <button class="btn-primary" onclick="go('predoc')">Got it — continue <svg class="ic big" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<section id="view-predoc" class="hidden">
+  <div class="card">
+    <span class="eyebrow warm"><span class="dot"></span> Documentation checkpoint</span>
+    <h1>Before you start — capture your setup</h1>
+    <div class="note warm">
+      <svg class="ic big ni" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <div><b>Do this now:</b> Take a clear photo of yourself at your study area (or a screenshot of this page showing the time). This is your <b>starting proof</b>. Store it with the photos you'll take later.</div>
+    </div>
+    <p style="color:var(--txt2)">Confirm each item to open Module 1:</p>
+    <div class="checks" id="predocChecks">
+      <div class="checkitem" data-k="c1"><div class="cbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6"/></svg></div><div class="ctx">I've read the instructions and understand how the program works.</div></div>
+      <div class="checkitem" data-k="c2"><div class="cbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6"/></svg></div><div class="ctx">I've taken a <b>"before"</b> photo of my study setup as proof of participation.</div></div>
+      <div class="checkitem" data-k="c3"><div class="cbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6"/></svg></div><div class="ctx">I understand I must keep taking photos during and after the course.</div></div>
+      <div class="checkitem" data-k="c4"><div class="cbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6"/></svg></div><div class="ctx">I'll save my progress file so I can resume anytime.</div></div>
+    </div>
+    <div class="btnrow">
+      <button class="btn-primary" id="predocBtn" onclick="finishPredoc()" disabled>Enter the course <svg class="ic big" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="btn-ghost btn-sm" onclick="saveProgress()"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Save progress</button>
+    </div>
+  </div>
+</section>
+
+<section id="view-dash" class="hidden">
+  <div class="card">
+    <span class="eyebrow"><span class="dot"></span> Your dashboard</span>
+    <h1>Course modules</h1>
+    <p style="color:var(--txt2)">Welcome back, <b id="dashName" style="color:var(--txt)">learner</b>. Pick an unlocked module to continue. Remember to <b>save your progress</b> and keep your <b>photo documentation</b> going.</p>
+    <div class="statgrid">
+      <div class="stat"><div class="n" id="stMods">0/4</div><div class="l">Modules passed</div></div>
+      <div class="stat"><div class="n" id="stScore">—</div><div class="l">Avg quiz score</div></div>
+      <div class="stat"><div class="n" id="stDrills">0</div><div class="l">Drills done</div></div>
+      <div class="stat"><div class="n" id="stPct">0%</div><div class="l">Course complete</div></div>
+    </div>
+    <div class="modlist" id="modList"></div>
+    <div class="savebar">
+      <button class="btn-ghost btn-sm" onclick="saveProgress()"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Save progress (.json)</button>
+      <label class="btn btn-outline btn-sm" style="cursor:pointer"><svg class="ic" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg> Load progress<input type="file" accept=".json" style="display:none" onchange="loadProgress(event)"></label>
+      <button class="btn-warm btn-sm" id="dashCertBtn" onclick="go('finish')" disabled><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M8.2 13.4L7 22l5-3 5 3-1.2-8.6"/></svg> Get certificate</button>
+    </div>
+  </div>
+</section>
+
+<section id="view-lesson" class="hidden">
+  <div class="card lesson">
+    <div class="lhead">
+      <span class="crumb" id="lCrumb">Module</span>
+      <button class="btn-ghost btn-sm" onclick="go('dash')"><svg class="ic" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Dashboard</button>
+    </div>
+    <div class="stepdots" id="lDots"></div>
+    <div id="lBody"></div>
+    <div class="lnav">
+      <button class="btn-ghost" id="lPrev" onclick="prevStep()"><svg class="ic" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Back</button>
+      <button class="btn-primary" id="lNext" onclick="nextStep()">Continue <svg class="ic big" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<section id="view-quiz" class="hidden">
+  <div class="card">
+    <div class="lhead">
+      <span class="crumb" id="qCrumb">Knowledge check</span>
+      <button class="btn-ghost btn-sm" onclick="go('dash')"><svg class="ic" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Dashboard</button>
+    </div>
+    <h2 id="qTitle">Knowledge check</h2>
+    <div class="note warm"><svg class="ic big ni" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><div><b>Documentation reminder:</b> snap a photo of yourself working through this check. Pass mark is <b>70%</b> — retake freely.</div></div>
+    <div id="qBody"></div>
+    <div class="btnrow">
+      <button class="btn-primary" id="qSubmit" onclick="submitQuiz()">Submit answers</button>
+      <button class="btn-ghost hidden" id="qRetake" onclick="retakeQuiz()"><svg class="ic" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0114.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0020.5 15"/></svg> Retake</button>
+      <button class="btn-warm hidden" id="qContinue" onclick="go('dash')">Continue <svg class="ic big" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+    <div id="qResult"></div>
+  </div>
+</section>
+
+<section id="view-finish" class="hidden">
+  <div class="card">
+    <span class="eyebrow warm"><span class="dot"></span> Final step</span>
+    <h1>Final documentation & certificate</h1>
+    <div class="note warm"><svg class="ic big ni" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><div><b>Take your final photo:</b> once you generate the certificate below, capture yourself <b>with it on screen</b>. That closes out your proof of participation.</div></div>
+    <div class="checks" id="finishChecks">
+      <div class="checkitem" data-k="f1"><div class="cbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6"/></svg></div><div class="ctx">I completed all 4 modules and passed each knowledge check.</div></div>
+      <div class="checkitem" data-k="f2"><div class="cbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6"/></svg></div><div class="ctx">I have my "before" and "during" photos, and I'll take an "after" photo.</div></div>
+      <div class="checkitem" data-k="f3"><div class="cbox"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L20 6"/></svg></div><div class="ctx">The name below is correct and how I want it printed.</div></div>
+    </div>
+    <label class="fld">Name for your certificate</label>
+    <input type="text" id="certNameInput" oninput="syncCertName()">
+    <div class="btnrow">
+      <button class="btn-warm" id="genCertBtn" onclick="revealCert()" disabled><svg class="ic big" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M8.2 13.4L7 22l5-3 5 3-1.2-8.6"/></svg> Generate my certificate</button>
+      <button class="btn-ghost" onclick="go('dash')"><svg class="ic" viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Back</button>
+    </div>
+  </div>
+  <div id="certWrap" class="hidden">
+    <div class="card">
+      <div class="certframe" id="certframe">
+        <div class="inner">
+          <div class="cbadge"><div class="inner2">FSM<br>313</div></div>
+          <h4>Certificate of Completion</h4>
+          <div class="cby">This certifies that</div>
+          <div class="cname" id="certName">Learner Name</div>
+          <div style="font-size:.8vw;color:#5c6b60">has successfully completed the self-paced program</div>
+          <div class="ctitle">Sensory Evaluation Mastery</div>
+          <div class="cdesc">Difference Testing · Descriptive Analysis · Affective Methods · Reporting Results</div>
+          <div class="cscore">Final average score: <b id="certScore">—</b> · Modules completed: 4 of 4</div>
+          <div class="cfoot">
+            <div><div class="sig">Course Instructor</div>FSM 313 · Sensory Evaluation</div>
+            <div><span id="certDate">Date</span><br>Date of completion</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center">
+      <p><b style="color:var(--mint)">Congratulations, <span id="finishName">learner</span>!</b> Your certificate is ready.</p>
+      <div class="btnrow center">
+        <button class="btn-warm" onclick="downloadPDF()"><svg class="ic big" viewBox="0 0 24 24"><path d="M12 15V3M8 11l4 4 4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg> Download PDF (A4)</button>
+        <button class="btn-ghost" onclick="saveProgress()"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Save final progress</button>
+      </div>
+      <p style="font-size:.84rem;color:var(--txt3);margin-top:14px">Don't forget your final photo with the certificate on screen.</p>
+    </div>
+  </div>
+</section>
+
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/* =========================================================
+   SensoryLab — FSM 313 Interactive Program
+   Single-purpose app logic + content
+   ========================================================= */
+
+/* ---------- small SVG helpers for inline figures ---------- */
+const FIG = {
+  triangle: `<svg viewBox="0 0 320 150" width="320" height="150">
+    <g font-family="Inter,sans-serif">
+    <rect x="20" y="40" width="60" height="72" rx="8" fill="#20222c" stroke="#25e0a4" stroke-width="2"/>
+    <rect x="130" y="40" width="60" height="72" rx="8" fill="#20222c" stroke="#25e0a4" stroke-width="2"/>
+    <rect x="240" y="40" width="60" height="72" rx="8" fill="#20222c" stroke="#ff7a59" stroke-width="2.5"/>
+    <text x="50" y="128" fill="#aab2c5" font-size="12" text-anchor="middle">Sample A</text>
+    <text x="160" y="128" fill="#aab2c5" font-size="12" text-anchor="middle">Sample A</text>
+    <text x="270" y="128" fill="#ff7a59" font-size="12" text-anchor="middle" font-weight="700">Sample B</text>
+    <text x="160" y="24" fill="#eef1f6" font-size="13" text-anchor="middle" font-weight="700">Two are identical · one is the odd one out</text>
+    </g></svg>`,
+  duotrio: `<svg viewBox="0 0 340 150" width="340" height="150">
+    <g font-family="Inter,sans-serif">
+    <rect x="20" y="45" width="64" height="66" rx="8" fill="#2a2d38" stroke="#ffcf5c" stroke-width="2.5"/>
+    <text x="52" y="30" fill="#ffcf5c" font-size="12" text-anchor="middle" font-weight="700">REFERENCE</text>
+    <text x="52" y="128" fill="#aab2c5" font-size="11" text-anchor="middle">known "R"</text>
+    <line x1="98" y1="78" x2="118" y2="78" stroke="#727a8f" stroke-width="2" stroke-dasharray="3 3"/>
+    <rect x="130" y="45" width="64" height="66" rx="8" fill="#20222c" stroke="#25e0a4" stroke-width="2"/>
+    <rect x="230" y="45" width="64" height="66" rx="8" fill="#20222c" stroke="#25e0a4" stroke-width="2"/>
+    <text x="162" y="128" fill="#aab2c5" font-size="11" text-anchor="middle">coded</text>
+    <text x="262" y="128" fill="#aab2c5" font-size="11" text-anchor="middle">coded</text>
+    <text x="212" y="30" fill="#eef1f6" font-size="12" text-anchor="middle">Which matches the reference?</text>
+    </g></svg>`,
+  scale: `<svg viewBox="0 0 340 120" width="340" height="120">
+    <g font-family="Inter,sans-serif">
+    <line x1="30" y1="60" x2="310" y2="60" stroke="#343846" stroke-width="3"/>
+    <circle cx="30" cy="60" r="6" fill="#2bd4d4"/><circle cx="170" cy="60" r="6" fill="#8b7bff"/><circle cx="310" cy="60" r="6" fill="#25e0a4"/>
+    <text x="30" y="88" fill="#aab2c5" font-size="12" text-anchor="middle">Dislike</text>
+    <text x="170" y="88" fill="#aab2c5" font-size="12" text-anchor="middle">Neutral</text>
+    <text x="310" y="88" fill="#aab2c5" font-size="12" text-anchor="middle">Like</text>
+    <text x="170" y="30" fill="#eef1f6" font-size="13" text-anchor="middle" font-weight="700">The 9-point hedonic scale</text>
+    </g></svg>`,
+  bell: `<svg viewBox="0 0 340 150" width="340" height="150">
+    <g font-family="Inter,sans-serif">
+    <path d="M20 120 C 90 120, 110 30, 170 30 C 230 30, 250 120, 320 120" fill="none" stroke="#25e0a4" stroke-width="2.5"/>
+    <line x1="170" y1="30" x2="170" y2="128" stroke="#ffcf5c" stroke-width="2" stroke-dasharray="4 4"/>
+    <text x="170" y="145" fill="#ffcf5c" font-size="12" text-anchor="middle" font-weight="700">mean</text>
+    <line x1="120" y1="128" x2="220" y2="128" stroke="#8b7bff" stroke-width="2"/>
+    <text x="170" y="118" fill="#c0b7ff" font-size="11" text-anchor="middle">spread = standard deviation</text>
+    </g></svg>`
+};
+
+/* ---------- Further-reading resources (real, stable links) ---------- */
+const R = {
+  campden: {t:"Sensory triangle testing (video)", s:"Campden BRI · watch a real panel run the test", u:"https://www.youtube.com/watch?v=nFXfg3ONgl0", k:"yt"},
+  ltfs_tri:{t:"Difference testing — the basic triangle test", s:"Let's Learn Food Science · beginner walkthrough", u:"https://www.youtube.com/watch?v=u4xu1dgeRnk", k:"yt"},
+  byu:     {t:"Difference testing explained", s:"BYU Sensory Lab · plain-language overview", u:"https://ndfs.byu.edu/sensory-lab/difference-testing", k:"web"},
+  wss:     {t:"Common sensory testing methodologies", s:"Wirral Sensory Services · methods compared", u:"https://wssintl.com/sensory-testing-methodologies/", k:"web"},
+  society: {t:"Society of Sensory Professionals wiki", s:"Reference articles on every test type", u:"https://www.sensorysociety.org/knowledge/sspwiki/", k:"web"},
+  ift:     {t:"Institute of Food Technologists — Sensory", s:"Professional body · articles & standards", u:"https://www.ift.org/", k:"web"},
+  descPMC: {t:"Overview of sensory characterization techniques", s:"Open-access review of descriptive methods", u:"https://pmc.ncbi.nlm.nih.gov/articles/PMC8834440/", k:"pdf"},
+  hedonic: {t:"The 9-point hedonic scale (search)", s:"Further reading on acceptance scales", u:"https://www.google.com/search?q=9-point+hedonic+scale+sensory+evaluation", k:"web"},
+  ethno:   {t:"What is ethnographic consumer research?", s:"Background reading on the 'fuzzy front end'", u:"https://www.google.com/search?q=ethnographic+consumer+research+food+product", k:"web"},
+  stats:   {t:"Choosing the right statistical test", s:"Scribbr · beginner guide to t-tests, ANOVA, regression", u:"https://www.scribbr.com/statistics/statistical-tests/", k:"web"},
+  meansd:  {t:"Mean and standard deviation (video)", s:"Khan Academy · the basics, from scratch", u:"https://www.khanacademy.org/math/statistics-probability/summarizing-quantitative-data", k:"web"}
+};
+function resBlock(list){
+  return `<div class="reslist">`+list.map(r=>`
+    <a class="res" href="${r.u}" target="_blank" rel="noopener">
+      <div class="ri ${r.k}">${r.k==='yt'
+        ?'<svg viewBox="0 0 24 24" fill="none"><path d="M22 8.3a3 3 0 00-2.1-2.1C18 5.6 12 5.6 12 5.6s-6 0-7.9.6A3 3 0 002 8.3 31 31 0 002 12a31 31 0 00.1 3.7 3 3 0 002.1 2.1c1.9.6 7.8.6 7.8.6s6 0 7.9-.6a3 3 0 002.1-2.1A31 31 0 0022 12a31 31 0 00-.1-3.7z"/><path d="M10 15l5-3-5-3z" fill="#ff6b6b" stroke="none"/></svg>'
+        : r.k==='pdf'
+        ?'<svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>'
+        :'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/></svg>'}</div>
+      <div class="rt"><b>${r.t}</b><span>${r.s}</span></div>
+      <svg class="ic go" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>
+    </a>`).join('')+`</div>`;
+}
+
+/* =========================================================
+   COURSE CONTENT
+   Each module = ordered list of STEPS.
+   step.type: 'lesson' | 'flash' | 'match' | 'sequence' | 'sim'
+   Last thing in every module is the quiz (handled separately).
+   ========================================================= */
+const COURSE = [
+{
+  id:"m1", title:"Difference Testing",
+  glyph:'<svg viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="4"/><circle cx="16" cy="8" r="4"/><circle cx="12" cy="16" r="4"/></svg>',
+  subtitle:"Can people tell two products apart?", time:"~30 min", tag:"Chapter 6",
+  steps:[
+    {type:"lesson", h:"Start here: what is sensory evaluation?", body:`
+      <div class="eli5"><span class="tag"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg> In plain words</span>
+        <p>Sensory evaluation is <b>using people as measuring instruments</b>. Instead of a machine, we ask trained or everyday tasters what they see, smell, taste and feel — then turn their answers into data we can trust.</p></div>
+      <p>Every food company faces questions a machine can't fully answer: <i>Did our cheaper recipe change the flavor? Will customers notice the new packaging? Which version do people like best?</i> Sensory science answers these carefully, without guessing.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></svg></span>The two big families of tests</h3>
+      <ul>
+        <li><b>Analytical methods</b> — measure the product objectively. This splits into <span class="kw">difference tests</span> ("is there a difference?") and <span class="kw">descriptive tests</span> ("describe the difference").</li>
+        <li><b>Affective methods</b> — measure how people <i>feel</i> about the product: preference and acceptance. (That's Module 3.)</li>
+      </ul>
+      <p>This module is all about the first tool in the analytical toolbox: the <b>difference test</b>.</p>`
+    },
+    {type:"lesson", h:"What a difference test does", body:`
+      <p>A <span class="kw">difference (discrimination) test</span> answers one simple yes/no question: <b>can people perceive a difference between two samples?</b> It doesn't ask which is better — only whether a difference exists.</p>
+      <div class="analogy"><b>Think of it like a spot-the-difference puzzle.</b> You're not judging which picture is nicer. You're only deciding: are these two actually different, or the same?</div>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></svg></span>Why companies run them</h3>
+      <ul>
+        <li>To prove two samples are <b>noticeably different</b>.</li>
+        <li>To prove two samples are <b>similar enough to swap</b> (e.g. a cheaper ingredient).</li>
+        <li>To check if a change in <b>ingredients, processing, packaging, or storage</b> was detectable.</li>
+        <li>To <b>screen and monitor panelists</b> — can this taster reliably spot differences?</li>
+      </ul>
+      <div class="eli5"><span class="tag"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/></svg> Rule of thumb</span>
+      <p>Difference tests come in two groups: <b>overall</b> difference tests (does <i>any</i> difference exist?) and <b>attribute</b> difference tests (does attribute X — like sweetness — differ?).</p></div>`
+    },
+    {type:"lesson", h:"The Triangle Test", body:`
+      <p>The <span class="kw">triangle test</span> is the most famous difference test. Each taster gets <b>three coded samples</b>: two are identical, one is different. Their only job: <b>pick the odd one out.</b></p>
+      <div class="figure">${FIG.triangle}<div class="cap">Two samples are the same, one differs. The taster selects the different one.</div></div>
+      <p>Why three samples and not two? Because with three, a pure guesser is only right <b>1 in 3 times (33%)</b>. If far more than a third of your panel picks correctly, the difference is probably real — not luck.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8M23 21v-2a4 4 0 00-3-3.9M16 3.1a4 4 0 010 7.8"/></svg></svg></span>How many tasters?</h3>
+      <ul>
+        <li><b>20–40 subjects</b> for a typical test; as few as 12 when differences are large.</li>
+        <li><b>Similarity testing</b> (proving things are the <i>same</i>) needs many more: <b>50–100 subjects</b>.</li>
+        <li>Serving orders are balanced across the panel: ABB, BAA, AAB, BBA, ABA, BAB.</li>
+      </ul>
+      <div class="example"><div class="tag"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg> Real-world example · candy bar wraps</div>
+        <p>A packaging director wants to switch from paper wrap to a new foil wrap. Paper-wrapped bars go hard after 3 months; foil-wrapped stay soft.</p>
+        <p><b>The question:</b> after 3 months, can people taste the difference? <b>Design:</b> a triangle test, 30–36 tasters, white lighting, with a <b>5% risk</b> level (it would wrongly cry "difference!" only 5% of the time).</p></div>`
+    },
+    {type:"sim", sim:"triangle", h:"Simulation: run a triangle test",
+      intro:"You're the sensory analyst. A panel of tasters is about to evaluate two cola recipes. Set the panel size, run the test, and read the verdict — just like in a real lab."
+    },
+    {type:"lesson", h:"Duo-Trio & Two-out-of-Five", body:`
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/></svg></svg></span>Duo-Trio test</h3>
+      <p>The taster first meets a labelled <span class="kw">reference</span> sample. Then they get two coded samples — <b>one matches the reference</b> — and must say which. Minimum <b>16 tasters</b>, ideally 30+.</p>
+      <div class="figure">${FIG.duotrio}<div class="cap">First study the reference, then find its twin among the coded pair.</div></div>
+      <div class="analogy"><b>Like matching a paint swatch.</b> The shop gives you a reference chip, and you find the tin that matches it.</div>
+      <p>Two versions: <b>constant reference</b> (same reference every time — used when tasters know one product well) and <b>balanced reference</b> (both samples take turns being the reference, removing bias).</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/><circle cx="9" cy="6" r="2"/><circle cx="15" cy="18" r="2"/></svg></svg></span>Two-out-of-Five test</h3>
+      <p>Five coded samples: <b>two of one kind, three of another</b>. The taster examines them left-to-right and selects the two that differ. A guesser is right only <b>1 in 10 times</b>, so even a small panel of 12 can catch small differences — great when fatigue is low (e.g. feeling fabric roughness).</p>
+      ${resBlock([R.campden, R.ltfs_tri])}`
+    },
+    {type:"flash", h:"Flashcards: match the test to its setup", cards:[
+      {q:"Triangle test", a:"3 samples — 2 identical, 1 different. Pick the odd one out. Guess rate 1 in 3."},
+      {q:"Duo-trio test", a:"A reference + 2 coded samples. Say which coded sample matches the reference. Guess rate 1 in 2."},
+      {q:"Two-out-of-five test", a:"5 samples (2 of one type, 3 of another). Pick the 2 that differ. Guess rate 1 in 10."},
+      {q:"Similarity testing", a:"Proving two products are the SAME needs a big panel: 50–100 subjects."},
+      {q:"Balanced reference", a:"Both samples take turns as the reference, removing bias from one being more familiar."}
+    ]},
+    {type:"lesson", h:"Same/Different, A–Not A & beyond", body:`
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="8" height="14" rx="2"/><rect x="13" y="5" width="8" height="14" rx="2"/></svg></svg></span>Same/Different test</h3>
+      <p>Give two samples and ask: <b>same or different?</b> Half the panel gets a truly matched pair, half gets a different pair. You compare how often each group says "different." Handy when strong flavors cause carryover — you can use a bland carrier like white bread.</p>
+      <div class="example"><div class="tag"><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg> Example · barbecue sauce cooker</div>
+        <p>A plant replaces an old cooker and wants to know if the sauce still tastes the same. 60 tasters, half matched / half unmatched pairs, bland bread carrier. Result: a <b>significant difference</b> — the supplier's "tastes identical" claim didn't hold.</p></div>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M4 20h16M7 20V8l5-4 5 4v12"/></svg></svg></span>"A"–"Not A" test</h3>
+      <p>First learn what "A" and "not A" taste like. Then judge samples one at a time: is this "A" or "not A"? Because you only taste one at a time, it beats carryover and fatigue — perfect for intense stimuli like sweeteners.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></svg></span>Difference-from-Control & Sequential</h3>
+      <p><b>Difference-from-Control:</b> rate how <i>big</i> the difference from a control is, on a scale (not just yes/no). <b>Sequential tests:</b> keep testing only until you have enough evidence to decide — saving time when accepting or rejecting a panelist or a product lot.</p>
+      ${resBlock([R.byu, R.wss, R.society])}`
+    },
+    {type:"sequence", h:"Drill: put the test procedure in order", intro:"Drag the steps of a triangle test into the correct order.",
+      items:[
+        {id:"a", t:"Prepare equal numbers of every sample combination"},
+        {id:"b", t:"Code samples with random 3-digit numbers"},
+        {id:"c", t:"Serve the three samples to each taster simultaneously"},
+        {id:"d", t:"Taster selects the odd sample"},
+        {id:"e", t:"Count correct responses and compare to the significance table"}
+      ]},
+    {type:"match", h:"Drill: match each term to its meaning", pairs:[
+      {t:"Discrimination test", d:"Detects whether a difference exists between samples"},
+      {t:"Reference sample", d:"The known, labelled sample others are compared against"},
+      {t:"Carryover", d:"When a strong flavor lingers and affects the next taste"},
+      {t:"5% risk (α)", d:"Willing to be wrong about a difference only 1 time in 20"},
+      {t:"Odd sample", d:"The one different sample in a triangle test"}
+    ]},
+  ],
+  quiz:[
+    {q:"What single question does a difference test answer?",o:["Which product is cheaper","Whether people can perceive a difference between samples","How much people like a product","How to describe a flavor"],a:1},
+    {q:"In a triangle test, how many samples does each taster receive?",o:["Two","Three","Four","Five"],a:1},
+    {q:"A pure guesser gets a triangle test correct about how often?",o:["1 in 2","1 in 3","1 in 5","1 in 10"],a:1},
+    {q:"Which test gives the taster a reference plus two coded samples?",o:["Triangle","Duo-trio","Two-out-of-five","A–Not A"],a:1},
+    {q:"Proving two products are the SAME (similarity testing) needs how many subjects?",o:["12–20","20–40","50–100","5–10"],a:2},
+    {q:"Why use a bland carrier like white bread in a same/different test of spicy sauce?",o:["To add flavor","To reduce carryover between strong samples","To increase sample count","To lower cost"],a:1},
+    {q:"The 'A–Not A' test is especially good when:",o:["Samples are very mild","Carryover and fatigue are a problem","You have thousands of tasters","You want to rank preference"],a:1},
+    {q:"A sequential test mainly helps you:",o:["Describe texture in detail","Stop testing once you have enough evidence to decide","Measure liking","Design packaging"],a:1}
+  ]
+},
+{
+  id:"m2", title:"Descriptive Analysis",
+  glyph:'<svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10"/></svg>',
+  subtitle:"Putting the sensory experience into words", time:"~25 min", tag:"Chapter 7",
+  steps:[
+    {type:"lesson", h:"From 'different' to 'how it's different'", body:`
+      <p>A difference test tells you samples differ. But <i>how</i> do they differ — sweeter? thicker? more bitter? That's the job of <span class="kw">descriptive analysis</span>: detecting and describing both the <b>qualitative</b> (what) and <b>quantitative</b> (how much) sensory aspects of a product, using <b>trained panels</b>.</p>
+      <div class="eli5"><span class="tag"><svg class="ic" viewBox="0 0 24 24"><path d="M12 20l9-16H3z"/></svg> In plain words</span>
+        <p>If a difference test is a smoke alarm ("something's different!"), descriptive analysis is the detective who walks in and says <b>exactly</b> what changed and by how much.</p></div>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></svg></span>Where it's used</h3>
+      <ul>
+        <li>Define the sensory <b>fingerprint</b> of a product.</li>
+        <li>Set a <b>standard</b> for quality control (QA/QC) and R&D.</li>
+        <li><b>Document attributes before a consumer test</b>, to choose what to ask consumers about.</li>
+        <li>Track sensory <b>changes over time</b> (shelf life, packaging).</li>
+        <li>Link human perception to <b>instrument</b> readings.</li>
+      </ul>`
+    },
+    {type:"lesson", h:"The four aspects of a description", body:`
+      <p>A full sensory description captures four things. Learn these four and you understand descriptive analysis.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></svg></span>1 · Characteristics — the <span class="plain">qualitative</span> aspect</h3>
+      <p>The <b>words</b> that define the product's profile: appearance, aroma, flavor, oral texture, and skin-feel characteristics. This is the "thumbprint" of the sample.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg></svg></span>2 · Intensity — the <span class="plain">quantitative</span> aspect</h3>
+      <p>How <b>strong</b> each characteristic is. Measured with a scale. Three common scale types: <b>Category scales, Line scales,</b> and <b>Magnitude Estimation</b>.</p>
+      <div class="figure">${FIG.scale}<div class="cap">A scale turns a feeling ("quite sweet") into a number you can average.</div></div>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></svg></span>3 · Order of appearance — the <span class="plain">time</span> aspect</h3>
+      <p>Flavors arrive and fade in sequence. A good description notes each one <b>in the order perceived</b> — including aftertaste.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></svg></span>4 · Overall impression — the <span class="plain">integrated</span> aspect</h3>
+      <p>The big picture: total aroma/flavor intensity, and <b>balance/blend (amplitude)</b> — how well everything fits together.</p>`
+    },
+    {type:"match", h:"Drill: match each aspect to its question", pairs:[
+      {t:"Characteristics",d:"WHAT do I perceive? (sweet, floral, crunchy)"},
+      {t:"Intensity",d:"HOW MUCH of it is there? (a little / a lot)"},
+      {t:"Order of appearance",d:"WHEN in the tasting does it show up?"},
+      {t:"Overall impression",d:"How BALANCED is the whole experience?"}
+    ]},
+    {type:"lesson", h:"The named descriptive methods", body:`
+      <p>Over the decades, labs developed several structured descriptive systems. You don't need to memorize every detail — just recognize each one and what makes it special.</p>
+      <ul>
+        <li><b>Flavor Profile Method</b> — created by Arthur D. Little, Inc. (late 1940s). A panel of <b>4–6 trained judges</b> discusses aroma & flavor, intensity, order, and aftertaste until they agree.</li>
+        <li><b>Texture Profile Method</b> — from General Foods Corp., built to describe the <b>texture</b> parameters of foods (hardness, chewiness, etc.).</li>
+        <li><b>Quantitative Descriptive Analysis (QDA)</b> — from Tragon Corp. Leans heavily on <b>statistics</b> to pick terms, procedures, and panelists.</li>
+        <li><b>Spectrum Descriptive Analysis</b> — panelists score intensity against <b>pre-learned, absolute reference scales</b>, so a "5" means the same thing to everyone.</li>
+        <li><b>Time–Intensity Analysis</b> — tracks how a sensation <b>rises and falls over time</b> (great for chewing gum or lingering bitterness).</li>
+        <li><b>Free-Choice Profiling</b> — lets each panelist <b>invent their own words</b>; statistics align everyone afterward.</li>
+      </ul>
+      <div class="analogy"><b>Spectrum is like a ruler with fixed markings</b> everyone learns first; <b>Free-Choice is like letting each person sketch in their own handwriting</b>, then translating.</div>
+      ${resBlock([R.descPMC, R.society])}`
+    },
+    {type:"flash", h:"Flashcards: name that method", cards:[
+      {q:"Uses pre-learned ABSOLUTE intensity scales", a:"Spectrum Descriptive Analysis"},
+      {q:"Panel of 4–6 judges discussing aroma & flavor to consensus", a:"Flavor Profile Method"},
+      {q:"Relies heavily on statistics to choose terms & panelists", a:"Quantitative Descriptive Analysis (QDA)"},
+      {q:"Each panelist invents their own descriptive words", a:"Free-Choice Profiling"},
+      {q:"Tracks how a sensation changes over time", a:"Time–Intensity Analysis"},
+      {q:"Built to describe hardness, chewiness, etc.", a:"Texture Profile Method"}
+    ]},
+    {type:"sim", sim:"profile", h:"Simulation: build a flavor profile",
+      intro:"Step into the role of a trained panelist. Rate the intensity of each attribute for a mystery beverage and watch your sensory 'fingerprint' take shape on a radar chart."
+    },
+    {type:"sequence", h:"Drill: order a tasting by time", intro:"Descriptive panels record attributes in the order they appear. Drag this coffee tasting into the right sequence.",
+      items:[
+        {id:"a", t:"Aroma — roasted, nutty smell before sipping"},
+        {id:"b", t:"First taste — bright acidity on the tip of the tongue"},
+        {id:"c", t:"Mid-palate — full body and bitterness develop"},
+        {id:"d", t:"Finish — lingering dark-chocolate note"},
+        {id:"e", t:"Aftertaste — dry, slightly astringent feel"}
+      ]},
+  ],
+  quiz:[
+    {q:"Descriptive analysis is carried out by:",o:["Random shoppers","Trained panels","One expert only","Machines alone"],a:1},
+    {q:"Which is NOT one of the four aspects of a description?",o:["Characteristics (qualitative)","Intensity (quantitative)","Price (economic)","Order of appearance (time)"],a:2},
+    {q:"'Intensity' in descriptive analysis measures:",o:["What attributes are present","How strong each attribute is","The product's price","The number of panelists"],a:1},
+    {q:"The Flavor Profile Method typically uses how many trained judges?",o:["1–2","4–6","10–15","20–40"],a:1},
+    {q:"Which method scores intensity against pre-learned absolute scales?",o:["Free-Choice Profiling","Spectrum Descriptive Analysis","Flavor Profile Method","Texture Profile Method"],a:1},
+    {q:"The three common intensity scale types are:",o:["Category, Line, Magnitude Estimation","Small, Medium, Large","Sweet, Sour, Bitter","Nominal, Ordinal, Ratio"],a:0},
+    {q:"Free-Choice Profiling is distinctive because panelists:",o:["Use a fixed vocabulary","Invent their own descriptive words","Skip all training","Only rate appearance"],a:1},
+    {q:"A key use of descriptive analysis before a consumer test is to:",o:["Set the product price","Choose which attributes to ask consumers about","Replace the consumer test","Train the marketing team"],a:1}
+  ]
+},
+{
+  id:"m3", title:"Affective Methods",
+  glyph:'<svg viewBox="0 0 24 24" fill="none"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 000-7.8z"/></svg>',
+  subtitle:"What do consumers actually prefer?", time:"~30 min", tag:"Chapter 8",
+  steps:[
+    {type:"lesson", h:"Measuring feelings, not just facts", body:`
+      <p>Difference and descriptive tests are <b>analytical</b> — they measure the product. <span class="kw">Affective tests</span> flip the focus to the <b>person</b>: do current or potential customers <b>prefer</b> or <b>accept</b> this product, idea, or feature?</p>
+      <div class="eli5"><span class="tag"><svg class="ic" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 10-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 000-7.8z"/></svg> In plain words</span>
+        <p>Analytical tests ask <b>"what is it?"</b> Affective tests ask <b>"do you like it?"</b> — and you need real consumers, not trained experts, to answer honestly.</p></div>
+      <p>Consumer studies are <b>expensive</b> (costs rise about 5–10% a year), so companies use them deliberately: screening products before big market tests, checking cheaper reformulations, and gathering ideas for development.</p>`
+    },
+    {type:"lesson", h:"Why companies run consumer tests", body:`
+      <p>There are several classic reasons — each tied to a business goal.</p>
+      <ul>
+        <li><b>Product maintenance</b> — protect an existing product's quality, market share and sales.</li>
+        <li><b>Improvement / optimization</b> — tweak a few variables to lift key attributes and liking.</li>
+        <li><b>New product development</b> — test at several stages of the design cycle.</li>
+        <li><b>Market potential</b> — usually led by marketing, informed by sensory data.</li>
+        <li><b>Category review</b> — understand where a brand sits among competitors.</li>
+        <li><b>Advertising claims</b> — you need valid data to legally say "preferred 2 to 1".</li>
+        <li><b>Uncovering needs</b> — spot wants consumers can't even articulate.</li>
+      </ul>
+      <div class="analogy"><b>Like a restaurant tasting night</b> before adding a dish to the menu — you learn whether to keep it, tweak it, or drop it, and why.</div>`
+    },
+    {type:"lesson", h:"Who tastes, and where", body:`
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8"/></svg></svg></span>Choosing subjects</h3>
+      <p>You define who counts as your consumer using <b>user group, age, gender, income, location</b>, and factors like ethnicity, education and employment. Three sources:</p>
+      <ul>
+        <li><b>Employees</b> — cheap and fast, but best limited to <b>maintenance</b> situations (they're biased about their own products).</li>
+        <li><b>Local residents</b> — cost-effective, but you must recruit and maintain a pool.</li>
+        <li><b>General population</b> — recruit target users in the field; most representative.</li>
+      </ul>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></svg></span>Choosing the location</h3>
+      <ul>
+        <li><b>Laboratory tests</b> — tightly controlled, quick access to staff, but artificial and not normal-use.</li>
+        <li><b>Central location tests</b> — high response rates, several products; conditions still artificial and questions limited.</li>
+        <li><b>Home-use tests</b> — most natural, reveal repeat-purchase potential, allow full statistics; but slow, smaller samples, more non-response, and usually max ~3 samples compared.</li>
+      </ul>
+      ${resBlock([R.wss])}`
+    },
+    {type:"match", h:"Drill: match the location to its trade-off", pairs:[
+      {t:"Laboratory test",d:"Most control, but least like real life"},
+      {t:"Central location test",d:"High response rate, several products, still artificial"},
+      {t:"Home-use test",d:"Most natural & shows repeat-buy potential, but slow"},
+      {t:"Employee panel",d:"Cheap and fast, but biased — keep to maintenance"}
+    ]},
+    {type:"lesson", h:"The 'Fuzzy Front End'", body:`
+      <p>Before a product even exists, companies explore what people need. This early, messy, exploratory phase is called the <span class="kw">Fuzzy Front End</span> — activities <b>before development</b> that boost a product's odds of success.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></svg></span>Tools & techniques</h3>
+      <ul>
+        <li><b>Ethnography / immersion</b> — watch consumers in real life: homes, streets, stores, the point of purchase.</li>
+        <li><b>Participant observer</b> (watches quietly) vs <b>observational interviewer</b> (interacts and probes).</li>
+        <li><b>Diaries</b> — consumers record steps and emotions during real use.</li>
+        <li><b>Community narratives / storytelling</b> — a creative group shares experiences and feelings.</li>
+      </ul>
+      <p>The design flow: <b>Innovate → Synthesize → Identify objectives → Generate data → Harvest ideas → Take action.</b> Then mine the data for commonalities, gaps, sensory clues, and surprising connections.</p>
+      ${resBlock([R.ethno])}`
+    },
+    {type:"lesson", h:"Qualitative vs Quantitative tests", body:`
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></svg></span>Qualitative — depth of feeling</h3>
+      <p>Explores <b>subjective responses</b> from a small sample. Great for uncovering hidden needs, first reactions to a concept, and consumer vocabulary.</p>
+      <ul>
+        <li><b>Focus groups</b> — 8–12 consumers, 1–2 hours, with a moderator.</li>
+        <li><b>Focus panels</b> — meet, take product home, return to discuss.</li>
+        <li><b>Mini-groups / triads / diads</b> — 4–6 / 3 / 2 respondents.</li>
+        <li><b>One-on-one interviews</b> — deep probing or sensitive topics.</li>
+      </ul>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-4 3 3 5-6"/></svg></svg></span>Quantitative — strength in numbers</h3>
+      <p>Gets structured answers from a <b>large group (50 to several hundred)</b> about preference, liking and sensory attributes. Good questionnaires stay short, clear, actionable, and place the key preference question well.</p>`
+    },
+    {type:"lesson", h:"Preference vs Acceptance tests", body:`
+      <p>Quantitative affective tests split into two families. This distinction is a favorite exam question — nail it.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M9 20l-5-5 5-5M15 4l5 5-5 5M4 15h11M9 9h11"/></svg></svg></span>Preference tests (choice)</h3>
+      <p>Force a <b>choice</b>: "Which do you prefer?" They rank products — <b>but they do NOT tell you if anything is actually liked.</b> (You might just be picking the least-bad option.)</p>
+      <ul>
+        <li><b>Paired preference</b> — 2 samples, pick A or B.</li>
+        <li><b>Rank preference</b> — 3+ samples ordered best to worst.</li>
+        <li><b>Multiple paired preference</b> — every pair (or selected pairs) compared.</li>
+      </ul>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 00-6 0v4M5 9h14l1 12H4z"/></svg></svg></span>Acceptance tests (rating)</h3>
+      <p>Ask <b>"How much do you like it?"</b> using a <b>hedonic scale</b> (from dislike to like). This DOES measure actual liking, and is compared against a well-liked reference.</p>
+      <div class="figure">${FIG.scale}<div class="cap">The 9-point hedonic scale: from "dislike extremely" to "like extremely".</div></div>
+      ${resBlock([R.hedonic])}`
+    },
+    {type:"flash", h:"Flashcards: preference or acceptance?", cards:[
+      {q:"'Which sample do you prefer?'", a:"PREFERENCE test — forces a choice, but not whether it's liked."},
+      {q:"'How much do you like this?'", a:"ACCEPTANCE test — measures actual liking on a hedonic scale."},
+      {q:"Ranking 4 samples best-to-worst", a:"PREFERENCE (rank preference)."},
+      {q:"What a preference test CANNOT tell you", a:"Whether any product is actually liked or disliked."},
+      {q:"The scale used in acceptance tests", a:"A hedonic scale (dislike → like)."}
+    ]},
+    {type:"sim", sim:"hedonic", h:"Simulation: run a consumer acceptance test",
+      intro:"You're testing two new snack recipes with a consumer panel. Collect hedonic ratings, watch the averages build, and decide which recipe wins."
+    },
+  ],
+  quiz:[
+    {q:"Affective tests primarily measure:",o:["Whether two samples differ","Consumers' preference or acceptance","Chemical composition","Panelist discrimination skill"],a:1},
+    {q:"Employee subjects are best limited to which situation?",o:["New launches","Maintenance situations","Advertising claims","Category review"],a:1},
+    {q:"A key limitation of home-use tests is that they are:",o:["Unnatural","Time-consuming with more non-response","Unable to show repeat-buy potential","Limited to the lab"],a:1},
+    {q:"A typical focus group has how many consumers?",o:["2–3","4–6","8–12","20–40"],a:2},
+    {q:"What does a PREFERENCE test NOT tell you?",o:["Which sample is chosen more","Whether products are actually liked","The rank order","Which of two is preferred"],a:1},
+    {q:"An ACCEPTANCE test uses which scale?",o:["A hedonic scale (dislike to like)","A pass/fail scale","Yes/no only","A ranking with no ratings"],a:0},
+    {q:"'Ethnography / immersion' in the Fuzzy Front End means:",o:["Statistical modelling","Observing consumers in real life","Writing ad claims","Lab panelist training"],a:1},
+    {q:"Consumer studies are used cautiously mainly because they are:",o:["Illegal","Expensive","Always inaccurate","Fast and free"],a:1}
+  ]
+},
+{
+  id:"m4", title:"Reporting & Statistics",
+  glyph:'<svg viewBox="0 0 24 24" fill="none"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>',
+  subtitle:"Turning results into decisions", time:"~25 min", tag:"Chapter 9",
+  steps:[
+    {type:"lesson", h:"Why reporting matters", body:`
+      <p>A test is only useful if someone can <b>act</b> on it. The final skill in sensory science is presenting results so a manager can make a confident decision. A clear report follows a standard structure.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg></svg></span>The report skeleton</h3>
+      <ul>
+        <li><b>Project objective</b> — the broad business goal.</li>
+        <li><b>Test objective</b> — the specific sensory question.</li>
+        <li><b>Samples</b> — what was evaluated.</li>
+        <li><b>Test design</b> — method, subjects, controls, risk level.</li>
+        <li><b>Conduct the test</b> — how it actually ran.</li>
+        <li><b>Data analysis</b> — the statistics.</li>
+        <li><b>Results & discussion</b> — findings in tables and figures.</li>
+        <li><b>Conclusion</b> — the answer and recommendation.</li>
+      </ul>
+      <div class="eli5"><span class="tag"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg> Golden rule</span>
+        <p>In Results & Discussion, give <b>enough data to justify your conclusions</b> — presented as clear tables and figures. Not a data dump; not a bare claim.</p></div>`
+    },
+    {type:"lesson", h:"Statistics from zero: the mean", body:`
+      <p><span class="kw">Statistics</span> is just the science of <b>organizing, presenting, analyzing and interpreting data</b>. Two ideas unlock most of sensory analysis: the <b>mean</b> and the <b>standard deviation</b>.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg></svg></span>The mean (the average)</h3>
+      <p>The <b>mean</b> tells you the <b>center</b> of your scores. Add them all, then divide by how many there are.</p>
+      <div class="example"><div class="tag"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12h16"/></svg> Worked example</div>
+        <p>Scores: 7, 8, 9, 7, 5, 5, 8. &nbsp; Add them → <b>49</b>. &nbsp; Count them → <b>7</b>. &nbsp; 49 ÷ 7 = <b>mean of 7</b>.</p>
+        <p>Another: 10, 4, 3, 15, 3, 7. &nbsp; Sum = <b>42</b>, count = 6, mean = <b>7</b> again.</p></div>
+      <div class="analogy"><b>The mean is the "balance point"</b> of your data — where the see-saw of scores would tip level.</div>`
+    },
+    {type:"lesson", h:"Statistics: the standard deviation", body:`
+      <p>Two panels can share the same mean but feel totally different. The <span class="kw">standard deviation (s)</span> measures the <b>spread</b> — how far scores scatter around the mean.</p>
+      <div class="figure">${FIG.bell}<div class="cap">Same center (mean), different spread. Standard deviation captures the width.</div></div>
+      <ul>
+        <li><b>Small standard deviation</b> → scores cluster tightly → the panel <b>agrees</b>.</li>
+        <li><b>Large standard deviation</b> → scores are scattered → the panel <b>disagrees</b>, or the product is inconsistent.</li>
+      </ul>
+      <div class="example"><div class="tag"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18"/></svg> How it's found (simplified)</div>
+        <p>For 7, 8, 9, 7, 5, 5, 8 (mean 7): find each score's distance from the mean, square it, add them (= 14), divide by n−1 (= 6), then take the square root → <b>s ≈ 1.53</b>. A fairly tight, agreeing panel.</p></div>
+      ${resBlock([R.meansd])}`
+    },
+    {type:"sim", sim:"stats", h:"Simulation: compute mean & spread live",
+      intro:"Type in a panel's scores and watch the mean and standard deviation update instantly. Feel how one wild score stretches the spread."
+    },
+    {type:"lesson", h:"Choosing the right advanced test", body:`
+      <p>When you go beyond averages, you pick a <b>parametric test</b> based on your question. Three families cover almost everything.</p>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M3 3v18h18M7 13l4-4 3 3 5-6"/></svg></svg></span>Regression — cause & effect</h3>
+      <ul>
+        <li><b>Simple linear regression</b> — 1 continuous cause → 1 continuous outcome (income → longevity).</li>
+        <li><b>Multiple linear regression</b> — 2+ causes → 1 outcome.</li>
+        <li><b>Logistic regression</b> — continuous cause → yes/no outcome (drug dose → survival).</li>
+      </ul>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><path d="M9 20l-5-5 5-5M15 4l5 5-5 5"/></svg></svg></span>Comparison — are the means different?</h3>
+      <ul>
+        <li><b>Paired t-test</b> — same group, two conditions.</li>
+        <li><b>Independent t-test</b> — two different groups.</li>
+        <li><b>ANOVA</b> — 3+ groups, one outcome.</li>
+        <li><b>MANOVA</b> — 3+ groups, multiple outcomes.</li>
+      </ul>
+      <h3><span class="hb"><svg viewBox="0 0 24 24"><circle cx="7" cy="7" r="3"/><circle cx="17" cy="17" r="3"/><path d="M10 10l4 4"/></svg></svg></span>Correlation — are they related?</h3>
+      <ul><li><b>Pearson's r</b> — measures the relationship between two continuous variables (latitude ↔ temperature).</li></ul>
+      ${resBlock([R.stats])}`
+    },
+    {type:"match", h:"Drill: match the question to the test", pairs:[
+      {t:"3+ groups, one outcome",d:"ANOVA"},
+      {t:"Two different groups compared",d:"Independent t-test"},
+      {t:"Continuous cause → yes/no outcome",d:"Logistic regression"},
+      {t:"Relationship between two variables",d:"Pearson's r (correlation)"},
+      {t:"Same group, two conditions",d:"Paired t-test"}
+    ]},
+    {type:"flash", h:"Flashcards: stats quick-fire", cards:[
+      {q:"What does the MEAN tell you?", a:"The center / average of the scores."},
+      {q:"What does the STANDARD DEVIATION tell you?", a:"The spread — how scattered scores are around the mean."},
+      {q:"Small standard deviation means…", a:"Panelists agree; scores cluster tightly."},
+      {q:"Which test for 3+ group means?", a:"ANOVA."},
+      {q:"Which section states the specific sensory question?", a:"The Test Objective."},
+      {q:"Results & Discussion should include…", a:"Enough data, as tables & figures, to justify conclusions."}
+    ]},
+  ],
+  quiz:[
+    {q:"Which report section states the specific sensory question?",o:["Project objective","Test objective","Conclusion","Samples"],a:1},
+    {q:"The mean of 10, 4, 3, 15, 3, 7 is:",o:["6","7","8","42"],a:1},
+    {q:"The standard deviation measures:",o:["The center of the data","The spread of scores around the mean","The largest value","The number of samples"],a:1},
+    {q:"A small standard deviation tells you:",o:["Panelists strongly disagree","Panelists largely agree","The mean is wrong","There were few tasters"],a:1},
+    {q:"To compare the means of THREE or more groups, use:",o:["Paired t-test","ANOVA","Pearson's r","Simple regression"],a:1},
+    {q:"Pearson's r belongs to which family of tests?",o:["Regression","Comparison","Correlation","Descriptive"],a:2},
+    {q:"For a continuous predictor and a yes/no outcome, use:",o:["Simple linear regression","Logistic regression","ANOVA","Pearson's r"],a:1},
+    {q:"Results & Discussion should provide:",o:["All raw data, no figures","Enough data (tables & figures) to justify conclusions","Only the conclusion","Only the objective"],a:1}
+  ]
+}
+];
+const PASS = 0.7;
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let state = {
+  name:"", started:null, predoc:false,
+  modules:{}, drillsDone:0, certIssued:false, certDate:null
+};
+COURSE.forEach(m=> state.modules[m.id]={ stepsSeen:[], drills:{}, quizScore:null, passed:false });
+
+let cur = { modIdx:0, stepIdx:0 };
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+const VIEWS = ["welcome","instructions","predoc","dash","lesson","quiz","finish"];
+function go(v){
+  VIEWS.forEach(x=>document.getElementById("view-"+x).classList.add("hidden"));
+  document.getElementById("view-"+v).classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+  document.getElementById("rail").classList.toggle("hidden", v==="welcome");
+  updateHeader(); updateProgress();
+  if(v==="dash") renderDash();
+  if(v==="finish") renderFinish();
+}
+
+function startNew(){
+  const n=document.getElementById("nameInput").value.trim();
+  if(!n){ toast("Please enter your name to begin."); return; }
+  state.name=n; state.started=new Date().toISOString();
+  document.getElementById("greetName").textContent=n;
+  go("instructions");
+}
+function finishPredoc(){ state.predoc=true; toast("You're in — keep documenting as you go."); go("dash"); }
+
+/* generic checklist wiring */
+function wireChecks(containerId, onChange){
+  const c=document.getElementById(containerId);
+  c.querySelectorAll(".checkitem").forEach(item=>{
+    item.onclick=()=>{ item.classList.toggle("on"); onChange(); };
+  });
+}
+wireChecks("predocChecks", ()=>{
+  const all=[...document.querySelectorAll("#predocChecks .checkitem")].every(i=>i.classList.contains("on"));
+  document.getElementById("predocBtn").disabled=!all;
+});
+
+/* =========================================================
+   HEADER + PROGRESS
+   ========================================================= */
+function initials(n){ return n.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join("").toUpperCase()||"?"; }
+function updateHeader(){
+  const w=document.getElementById("whoami");
+  w.innerHTML = state.name ? `<div class="av">${escapeHtml(initials(state.name))}</div>
+    <div><div class="nm">${escapeHtml(state.name)}</div><div class="rl">Learner</div></div>` : "";
+}
+function coursePct(){ return Math.round(COURSE.filter(m=>state.modules[m.id].passed).length/COURSE.length*100); }
+function updateProgress(){
+  const pct=coursePct();
+  document.getElementById("railFill").style.width=pct+"%";
+  document.getElementById("railPct").textContent=pct+"%";
+  const passed=COURSE.filter(m=>state.modules[m.id].passed).length;
+  document.getElementById("railLbl").textContent=`${passed} of ${COURSE.length} modules complete`;
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+function renderDash(){
+  document.getElementById("dashName").textContent=state.name;
+  const list=document.getElementById("modList"); list.innerHTML="";
+  COURSE.forEach((m,i)=>{
+    const st=state.modules[m.id];
+    const unlocked = i===0 || state.modules[COURSE[i-1].id].passed;
+    const totalSteps=m.steps.length+1; // +quiz
+    const seen=st.stepsSeen.length + (st.passed?1:0);
+    const prog=Math.min(100, Math.round(seen/totalSteps*100));
+    const el=document.createElement("div");
+    el.className="mod"+(st.passed?" done":"")+(!unlocked?" locked":"");
+    const statusHtml = st.passed
+      ? `<span class="st done">Passed ${Math.round(st.quizScore*100)}%</span>`
+      : unlocked ? `<span class="st todo">${st.stepsSeen.length? "Resume":"Start"}</span>`
+                 : `<span class="st lock">Locked</span>`;
+    el.innerHTML=`
+      <div class="glyph">${st.passed?'<svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5"/></svg>':m.glyph}</div>
+      <div class="meta">
+        <h3>Module ${i+1} · ${m.title}</h3>
+        <div class="d">${m.subtitle}</div>
+        <div class="tags"><span class="chip">${m.tag}</span><span class="chip">${m.time}</span>
+          <span class="chip violet">${m.steps.filter(s=>s.type!=='lesson').length} activities</span></div>
+        <div class="mprog"><i style="width:${prog}%"></i></div>
+      </div>
+      ${statusHtml}`;
+    el.onclick = unlocked ? ()=>openModule(i) : ()=>toast("Finish the previous module to unlock this one.");
+    list.appendChild(el);
+  });
+  const passed=COURSE.filter(m=>state.modules[m.id].passed);
+  document.getElementById("stMods").textContent=passed.length+"/"+COURSE.length;
+  const scored=COURSE.map(m=>state.modules[m.id].quizScore).filter(s=>s!=null);
+  document.getElementById("stScore").textContent=scored.length?Math.round(scored.reduce((a,b)=>a+b,0)/scored.length*100)+"%":"—";
+  document.getElementById("stDrills").textContent=state.drillsDone;
+  document.getElementById("stPct").textContent=coursePct()+"%";
+  const allDone=passed.length===COURSE.length;
+  document.getElementById("dashCertBtn").disabled=!allDone;
+}
+
+/* =========================================================
+   MODULE STEP ENGINE
+   ========================================================= */
+function openModule(i){ cur.modIdx=i; cur.stepIdx=0; renderStep(); go("lesson"); }
+
+function renderStep(){
+  const m=COURSE[cur.modIdx];
+  const total=m.steps.length;
+  const step=m.steps[cur.stepIdx];
+  document.getElementById("lCrumb").textContent=`Module ${cur.modIdx+1} · ${m.title} · Step ${cur.stepIdx+1} of ${total}`;
+  // dots
+  const dots=document.getElementById("lDots"); dots.innerHTML="";
+  m.steps.forEach((_,idx)=>{
+    const d=document.createElement("div");
+    d.className="sd"+(idx===cur.stepIdx?" active":(idx<cur.stepIdx?" seen":""));
+    dots.appendChild(d);
+  });
+  // mark seen
+  const seen=state.modules[m.id].stepsSeen;
+  if(!seen.includes(cur.stepIdx)) seen.push(cur.stepIdx);
+
+  const body=document.getElementById("lBody");
+  body.className="";
+  if(step.type==="lesson") renderLessonStep(body, step);
+  else if(step.type==="flash") renderFlash(body, step);
+  else if(step.type==="match") renderMatch(body, step);
+  else if(step.type==="sequence") renderSequence(body, step);
+  else if(step.type==="sim") renderSim(body, step);
+
+  document.getElementById("lPrev").style.visibility = cur.stepIdx===0?"hidden":"visible";
+  document.getElementById("lNext").innerHTML = (cur.stepIdx===total-1)
+    ? 'Take the knowledge check <svg class="ic big" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+    : 'Continue <svg class="ic big" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+}
+function nextStep(){
+  const m=COURSE[cur.modIdx];
+  if(cur.stepIdx<m.steps.length-1){ cur.stepIdx++; renderStep(); window.scrollTo({top:0,behavior:"smooth"}); }
+  else openQuiz(cur.modIdx);
+}
+function prevStep(){ if(cur.stepIdx>0){ cur.stepIdx--; renderStep(); window.scrollTo({top:0,behavior:"smooth"}); } }
+
+/* ---------- LESSON ---------- */
+function renderLessonStep(body, step){
+  body.className="lesson";
+  body.innerHTML=`<h2>${step.h}</h2>${step.body}`;
+}
+
+/* ---------- FLASHCARDS ---------- */
+function renderFlash(body, step){
+  body.className="lesson";
+  let idx=0;
+  body.innerHTML=`
+    <div class="drillwrap">
+      <div class="dh"><div class="di"><svg viewBox="0 0 24 24" fill="none"><path d="M2 7l10-4 10 4-10 4z"/><path d="M2 12l10 4 10-4"/></svg></div>
+        <div><h3>${step.h}</h3><p>Tap a card to flip it. Work through all of them.</p></div></div>
+      <div class="flash"><div class="flashcard" id="fcard">
+        <div class="flashface flashfront"><div class="q" id="fq"></div><small>tap to reveal</small></div>
+        <div class="flashface flashback"><div class="a" id="fa"></div><small>tap to flip back</small></div>
+      </div></div>
+      <div class="flashnav">
+        <button class="btn-ghost btn-sm" id="fprev"><svg class="ic" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg> Prev</button>
+        <span class="cnt" id="fcnt"></span>
+        <button class="btn-ghost btn-sm" id="fnext">Next <svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>`;
+  const card=body.querySelector("#fcard"), q=body.querySelector("#fq"), a=body.querySelector("#fa"), cnt=body.querySelector("#fcnt");
+  function show(){ card.classList.remove("flipped"); q.textContent=step.cards[idx].q; a.textContent=step.cards[idx].a; cnt.textContent=`${idx+1} / ${step.cards.length}`; }
+  card.onclick=()=>card.classList.toggle("flipped");
+  body.querySelector("#fprev").onclick=()=>{ idx=(idx-1+step.cards.length)%step.cards.length; show(); };
+  body.querySelector("#fnext").onclick=()=>{ idx=(idx+1)%step.cards.length; if(idx===0) markDrill(step); show(); };
+  show();
+}
+
+/* ---------- MATCH ---------- */
+function renderMatch(body, step){
+  body.className="lesson";
+  const terms=step.pairs.map((p,i)=>({...p,i})).sort(()=>Math.random()-.5);
+  const defs=step.pairs.map((p,i)=>({...p,i})).sort(()=>Math.random()-.5);
+  body.innerHTML=`
+    <div class="drillwrap">
+      <div class="dh"><div class="di"><svg viewBox="0 0 24 24" fill="none"><path d="M9 3H4v5M15 21h5v-5M20 9V4h-5M4 15v5h5"/></svg></div>
+        <div><h3>${step.h}</h3><p>Tap a term, then tap its matching meaning.</p></div></div>
+      <div class="matchgrid">
+        <div class="mcol"><h4>Terms</h4><div id="mterms"></div></div>
+        <div class="mcol"><h4>Meanings</h4><div id="mdefs"></div></div>
+      </div>
+      <div id="mstatus" style="margin-top:14px;font-size:.85rem;color:var(--txt3);font-weight:700"></div>
+    </div>`;
+  const tc=body.querySelector("#mterms"), dc=body.querySelector("#mdefs"), status=body.querySelector("#mstatus");
+  let selTerm=null, matched=0;
+  terms.forEach(t=>{ const e=document.createElement("div"); e.className="mterm"; e.textContent=t.t; e.dataset.i=t.i;
+    e.onclick=()=>{ if(e.classList.contains("matched"))return; tc.querySelectorAll(".mterm").forEach(x=>x.classList.remove("sel")); e.classList.add("sel"); selTerm=e; }; tc.appendChild(e); });
+  defs.forEach(d=>{ const e=document.createElement("div"); e.className="mdef"; e.textContent=d.d; e.dataset.i=d.i;
+    e.onclick=()=>{ if(!selTerm||e.classList.contains("matched"))return;
+      if(selTerm.dataset.i===e.dataset.i){ selTerm.classList.add("matched"); e.classList.add("matched"); selTerm.classList.remove("sel"); selTerm=null; matched++;
+        status.textContent=`Matched ${matched} / ${step.pairs.length}`;
+        if(matched===step.pairs.length){ status.innerHTML='<span style="color:var(--mint)">All matched — nice work!</span>'; markDrill(step); }
+      } else { e.classList.add("wrong"); setTimeout(()=>e.classList.remove("wrong"),400); }
+    }; dc.appendChild(e); });
+}
+
+/* ---------- SEQUENCE ---------- */
+function renderSequence(body, step){
+  body.className="lesson";
+  const shuffled=step.items.map(x=>x).sort(()=>Math.random()-.5);
+  body.innerHTML=`
+    <div class="drillwrap">
+      <div class="dh"><div class="di"><svg viewBox="0 0 24 24" fill="none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div>
+        <div><h3>${step.h}</h3><p>${step.intro}</p></div></div>
+      <div class="seqlist" id="seqlist"></div>
+      <button class="btn-primary btn-sm" id="seqcheck" style="margin-top:14px">Check order</button>
+      <span id="seqstatus" style="margin-left:12px;font-size:.85rem;font-weight:700"></span>
+    </div>`;
+  const list=body.querySelector("#seqlist");
+  shuffled.forEach(it=>{ const e=document.createElement("div"); e.className="seqitem"; e.draggable=true; e.dataset.id=it.id;
+    e.innerHTML=`<span class="pos">•</span><svg class="ic gr" viewBox="0 0 24 24"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg><span class="sx">${it.t}</span>`;
+    list.appendChild(e); });
+  let dragEl=null;
+  list.querySelectorAll(".seqitem").forEach(e=>{
+    e.addEventListener("dragstart",()=>{ dragEl=e; e.classList.add("dragging"); });
+    e.addEventListener("dragend",()=>{ e.classList.remove("dragging"); list.querySelectorAll(".seqitem").forEach(x=>x.classList.remove("over")); });
+    e.addEventListener("dragover",ev=>{ ev.preventDefault(); const after=getAfter(list,ev.clientY);
+      list.querySelectorAll(".seqitem").forEach(x=>x.classList.remove("over"));
+      if(after) after.classList.add("over");
+      if(after==null) list.appendChild(dragEl); else list.insertBefore(dragEl,after); });
+  });
+  // touch fallback: tap two items to swap
+  let tapSel=null;
+  list.querySelectorAll(".seqitem").forEach(e=>{ e.addEventListener("click",()=>{
+    if(!tapSel){ tapSel=e; e.style.borderColor="var(--teal)"; }
+    else if(tapSel===e){ tapSel.style.borderColor=""; tapSel=null; }
+    else { const a=[...list.children]; const ia=a.indexOf(tapSel), ib=a.indexOf(e);
+      if(ia<ib) list.insertBefore(tapSel,e.nextSibling); else list.insertBefore(tapSel,e);
+      tapSel.style.borderColor=""; tapSel=null; }
+  }); });
+  function getAfter(container,y){ const els=[...container.querySelectorAll(".seqitem:not(.dragging)")];
+    return els.reduce((closest,child)=>{ const box=child.getBoundingClientRect(); const off=y-box.top-box.height/2;
+      if(off<0&&off>closest.offset) return {offset:off,element:child}; else return closest; },{offset:-Infinity}).element; }
+  body.querySelector("#seqcheck").onclick=()=>{
+    const order=[...list.querySelectorAll(".seqitem")].map(x=>x.dataset.id);
+    const correct=step.items.map(x=>x.id);
+    const ok=order.every((id,i)=>id===correct[i]);
+    const status=body.querySelector("#seqstatus");
+    list.querySelectorAll(".seqitem").forEach((x,i)=>{ x.querySelector(".pos").textContent=i+1;
+      x.classList.toggle("correct", x.dataset.id===correct[i]); });
+    if(ok){ status.innerHTML='<span style="color:var(--mint)">Perfect order!</span>'; markDrill(step); }
+    else status.innerHTML='<span style="color:var(--gold)">Not quite — green rows are right. Adjust the rest.</span>';
+  };
+}
+
+/* ---------- mark a drill complete ---------- */
+function markDrill(step){
+  const st=state.modules[COURSE[cur.modIdx].id];
+  const key=step.h;
+  if(!st.drills[key]){ st.drills[key]=true; state.drillsDone++; toast("Activity complete — well done!"); }
+}
+
+
+/* =========================================================
+   SIMULATIONS
+   ========================================================= */
+function renderSim(body, step){
+  body.className="lesson";
+  body.innerHTML=`
+    <div class="drillwrap">
+      <div class="dh"><div class="di"><svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6v5l4 9a2 2 0 01-2 3H7a2 2 0 01-2-3l4-9z"/><path d="M9 3h6"/></svg></div>
+        <div><h3>${step.h}</h3><p>Interactive simulation</p></div></div>
+      <p style="color:var(--txt2)">${step.intro}</p>
+      <div class="simstage" id="simstage"></div>
+    </div>`;
+  const s=body.querySelector("#simstage");
+  if(step.sim==="triangle") simTriangle(s, step);
+  else if(step.sim==="profile") simProfile(s, step);
+  else if(step.sim==="hedonic") simHedonic(s, step);
+  else if(step.sim==="stats") simStats(s, step);
+}
+
+/* ---- SIM 1: Triangle test ---- */
+function simTriangle(s, step){
+  s.innerHTML=`
+    <div class="simrow"><label>Panel size: <b id="tpn">30</b> tasters</label>
+      <input class="slider" type="range" min="12" max="60" value="30" id="tpanel"></div>
+    <div class="simrow"><label>How different are the recipes?</label>
+      <select id="tdiff" style="background:var(--panel);color:var(--txt);border:1.5px solid var(--line2);border-radius:10px;padding:9px 12px;font-family:inherit;font-weight:600">
+        <option value="0.05">Barely different</option>
+        <option value="0.35" selected>Somewhat different</option>
+        <option value="0.7">Clearly different</option>
+      </select></div>
+    <div class="simscene" id="tscene"></div>
+    <button class="btn-primary btn-sm" id="trun"><svg class="ic" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg> Run the panel</button>
+    <div class="simreadout" id="tout">Set your panel, then run the test. Each taster gets three cups — two the same, one different — and picks the odd one out.</div>`;
+  const codes=["417","628","935"];
+  const scene=s.querySelector("#tscene");
+  function drawCups(oddIdx){ scene.innerHTML="";
+    for(let i=0;i<3;i++){ const c=document.createElement("div"); c.className="samplecup";
+      const col=i===oddIdx?"#ff7a59":"#2bd4d4";
+      c.innerHTML=`<div class="cupbody"><div class="liquid" style="height:55%;background:linear-gradient(180deg,${col}55,${col}22)"></div></div><div class="cupcode">${codes[i]}</div>`;
+      scene.appendChild(c); }
+  }
+  drawCups(2);
+  s.querySelector("#tpanel").oninput=e=>s.querySelector("#tpn").textContent=e.target.value;
+  s.querySelector("#trun").onclick=()=>{
+    const n=+s.querySelector("#tpanel").value;
+    const d=parseFloat(s.querySelector("#tdiff").value);
+    const oddIdx=Math.floor(Math.random()*3); drawCups(oddIdx);
+    // probability a taster detects = 1/3 (guess) + d*(2/3)
+    const pDetect=1/3 + d*(2/3);
+    let correct=0; for(let i=0;i<n;i++){ if(Math.random()<pDetect) correct++; }
+    // significance threshold approx: correct needed ~ n/3 + 1.65*sqrt(n*2/9)
+    const mean=n/3, sd=Math.sqrt(n*(1/3)*(2/3));
+    const needed=Math.ceil(mean+1.65*sd);
+    const sig=correct>=needed;
+    s.querySelector("#tout").innerHTML=
+`Panel size:        ${n} tasters
+Correct picks:     <span class="hl">${correct}</span> chose the odd sample
+Needed for 5% sig: ${needed} correct
+Result:            ${sig
+  ? '<span class="hl">SIGNIFICANT — a real difference was detected.</span>\nThe two recipes are perceptibly different. Report it to the client.'
+  : '<span class="warnc">NOT significant — no difference detected.</span>\nThe panel could not reliably tell them apart at 5% risk.'}`;
+    markDrill(step);
+  };
+}
+
+/* ---- SIM 2: Flavor profile (radar) ---- */
+function simProfile(s, step){
+  const attrs=["Sweet","Sour","Bitter","Aroma","Body"];
+  const vals=[5,4,3,6,5];
+  s.innerHTML=`
+    <p style="color:var(--txt2);font-size:.9rem">Rate each attribute from 0–10 for the mystery beverage. Your profile updates live.</p>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+      <div id="radarwrap" style="flex:1;min-width:220px;text-align:center"></div>
+      <div style="flex:1;min-width:220px" id="sliders"></div>
+    </div>
+    <button class="btn-primary btn-sm" id="plock" style="margin-top:6px"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Lock in my profile</button>
+    <div class="simreadout" id="pout">Adjust the sliders to describe intensity — the shape is this product's sensory fingerprint.</div>`;
+  const sl=s.querySelector("#sliders");
+  attrs.forEach((a,i)=>{ const row=document.createElement("div"); row.className="simrow"; row.style.margin="8px 0";
+    row.innerHTML=`<label style="min-width:70px">${a}</label><input class="slider" type="range" min="0" max="10" value="${vals[i]}" data-i="${i}"><b style="min-width:20px" id="pv${i}">${vals[i]}</b>`;
+    sl.appendChild(row); });
+  function draw(){
+    const cx=110,cy=110,R=80,N=attrs.length;
+    let pts="", axes="", labels="";
+    for(let i=0;i<N;i++){ const ang=-Math.PI/2 + i*2*Math.PI/N;
+      const ax=cx+Math.cos(ang)*R, ay=cy+Math.sin(ang)*R;
+      axes+=`<line x1="${cx}" y1="${cy}" x2="${ax}" y2="${ay}" stroke="#343846" stroke-width="1"/>`;
+      const lx=cx+Math.cos(ang)*(R+16), ly=cy+Math.sin(ang)*(R+16);
+      labels+=`<text x="${lx}" y="${ly}" fill="#aab2c5" font-size="10" text-anchor="middle">${attrs[i]}</text>`;
+      const r=vals[i]/10*R; pts+=`${cx+Math.cos(ang)*r},${cy+Math.sin(ang)*r} `;
+    }
+    s.querySelector("#radarwrap").innerHTML=`<svg viewBox="0 0 220 220" width="220" height="220">
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#2a2d38"/>
+      <circle cx="${cx}" cy="${cy}" r="${R*0.66}" fill="none" stroke="#2a2d38"/>
+      <circle cx="${cx}" cy="${cy}" r="${R*0.33}" fill="none" stroke="#2a2d38"/>
+      ${axes}<polygon points="${pts}" fill="rgba(37,224,164,.25)" stroke="#25e0a4" stroke-width="2"/>${labels}</svg>`;
+  }
+  sl.querySelectorAll("input").forEach(inp=>{ inp.oninput=e=>{ const i=+e.target.dataset.i; vals[i]=+e.target.value; s.querySelector("#pv"+i).textContent=vals[i]; draw(); }; });
+  draw();
+  s.querySelector("#plock").onclick=()=>{
+    const top=attrs[vals.indexOf(Math.max(...vals))];
+    s.querySelector("#pout").innerHTML=`Profile locked. Dominant attribute: <span class="hl">${top}</span>.\nA trained panel would agree on wording and reference standards so everyone's "${top} = ${Math.max(...vals)}" means the same thing. That consistency is the heart of descriptive analysis.`;
+    markDrill(step);
+  };
+}
+
+/* ---- SIM 3: Hedonic acceptance ---- */
+function simHedonic(s, step){
+  s.innerHTML=`
+    <p style="color:var(--txt2);font-size:.9rem">Simulate a consumer panel rating two snack recipes on the 9-point hedonic scale (1 = dislike extremely, 9 = like extremely).</p>
+    <div class="simrow"><label>Panel size: <b id="hpn">60</b></label>
+      <input class="slider" type="range" min="30" max="150" value="60" id="hpanel"></div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:700;color:#25e0a4;margin-bottom:6px">Recipe A</div>
+        <div class="simrow"><label>Underlying appeal</label>
+          <select id="ha" style="background:var(--panel);color:var(--txt);border:1.5px solid var(--line2);border-radius:10px;padding:8px;font-family:inherit"><option value="5.5">Modest</option><option value="6.8" selected>Good</option><option value="7.6">Excellent</option></select></div>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:700;color:#ff7a59;margin-bottom:6px">Recipe B</div>
+        <div class="simrow"><label>Underlying appeal</label>
+          <select id="hb" style="background:var(--panel);color:var(--txt);border:1.5px solid var(--line2);border-radius:10px;padding:8px;font-family:inherit"><option value="5.5">Modest</option><option value="6.2" selected>Good</option><option value="7.6">Excellent</option></select></div>
+      </div>
+    </div>
+    <button class="btn-primary btn-sm" id="hrun" style="margin-top:8px"><svg class="ic" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9z"/></svg> Collect ratings</button>
+    <div class="simreadout" id="hout">Choose each recipe's appeal, then collect ratings from your panel.</div>`;
+  s.querySelector("#hpanel").oninput=e=>s.querySelector("#hpn").textContent=e.target.value;
+  function sample(mean){ // clamp normal-ish 1..9
+    let v=mean + (Math.random()+Math.random()+Math.random()-1.5)*1.6;
+    return Math.max(1,Math.min(9,v));
+  }
+  s.querySelector("#hrun").onclick=()=>{
+    const n=+s.querySelector("#hpanel").value;
+    const ma=parseFloat(s.querySelector("#ha").value), mb=parseFloat(s.querySelector("#hb").value);
+    let a=[],b=[]; for(let i=0;i<n;i++){ a.push(sample(ma)); b.push(sample(mb)); }
+    const avg=arr=>arr.reduce((x,y)=>x+y,0)/arr.length;
+    const aA=avg(a), aB=avg(b), diff=Math.abs(aA-aB);
+    const winner = diff<0.3 ? "It's essentially a tie (parity)."
+      : (aA>aB ? "Recipe A wins." : "Recipe B wins.");
+    s.querySelector("#hout").innerHTML=
+`Panel size:     ${n} consumers
+Recipe A mean:  <span class="hl">${aA.toFixed(2)}</span> / 9
+Recipe B mean:  <span class="hl">${aB.toFixed(2)}</span> / 9
+Difference:     ${diff.toFixed(2)} points
+Verdict:        <span class="hl">${winner}</span>
+${diff<0.3?'With parity, a company might keep the cheaper recipe.':'A larger gap gives marketing a claim to build on — pending statistics.'}`;
+    markDrill(step);
+  };
+}
+
+/* ---- SIM 4: Mean & standard deviation ---- */
+function simStats(s, step){
+  s.innerHTML=`
+    <p style="color:var(--txt2);font-size:.9rem">Enter panel scores (0–9), separated by commas. Watch the mean and spread react.</p>
+    <input type="text" id="sdata" value="7, 8, 9, 7, 5, 5, 8" style="margin-bottom:10px">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin:6px 0">
+      <div style="flex:1;min-width:120px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px">
+        <div class="bignum" id="smean">—</div><div style="font-size:.72rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;font-weight:700">Mean</div></div>
+      <div style="flex:1;min-width:120px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px">
+        <div class="bignum" id="ssd">—</div><div style="font-size:.72rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;font-weight:700">Std deviation</div></div>
+      <div style="flex:1;min-width:120px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px">
+        <div class="bignum" id="sn">—</div><div style="font-size:.72rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;font-weight:700">Count</div></div>
+    </div>
+    <div id="sbars" style="margin:10px 0"></div>
+    <div class="simreadout" id="sout"></div>`;
+  function compute(){
+    const raw=s.querySelector("#sdata").value.split(",").map(x=>parseFloat(x.trim())).filter(x=>!isNaN(x));
+    if(raw.length===0){ s.querySelector("#sout").textContent="Enter some numbers to begin."; return; }
+    const n=raw.length, mean=raw.reduce((a,b)=>a+b,0)/n;
+    const sd=n>1?Math.sqrt(raw.reduce((a,b)=>a+(b-mean)**2,0)/(n-1)):0;
+    s.querySelector("#smean").textContent=mean.toFixed(2);
+    s.querySelector("#ssd").textContent=sd.toFixed(2);
+    s.querySelector("#sn").textContent=n;
+    // bars
+    const max=Math.max(...raw,9);
+    s.querySelector("#sbars").innerHTML=raw.map(v=>`<div style="display:inline-block;width:${Math.max(14,100/n-2)}%;vertical-align:bottom;text-align:center;margin:0 1px">
+      <div style="height:${v/max*80+8}px;background:var(--grad);border-radius:5px 5px 0 0"></div>
+      <div style="font-size:.66rem;color:var(--txt3);margin-top:3px">${v}</div></div>`).join("");
+    const spread = sd<1.2?"tight — the panel largely agrees":sd<2.2?"moderate — some disagreement":"wide — the panel disagrees or the product is inconsistent";
+    s.querySelector("#sout").innerHTML=`Mean = <span class="hl">${mean.toFixed(2)}</span> is the center of the scores.\nStandard deviation = <span class="hl">${sd.toFixed(2)}</span> → spread is ${spread}.\nTry adding one extreme score (like 1 or 9) and watch the spread jump.`;
+    markDrill(step);
+  }
+  s.querySelector("#sdata").oninput=compute;
+  compute();
+}
+
+/* =========================================================
+   QUIZ
+   ========================================================= */
+let quizAnswers=[];
+function openQuiz(i){
+  cur.modIdx=i; const m=COURSE[i];
+  quizAnswers=new Array(m.quiz.length).fill(null);
+  document.getElementById("qCrumb").textContent=`Module ${i+1} · ${m.title}`;
+  document.getElementById("qTitle").textContent=`Knowledge check — ${m.title}`;
+  document.getElementById("qResult").innerHTML="";
+  document.getElementById("qSubmit").classList.remove("hidden");
+  document.getElementById("qRetake").classList.add("hidden");
+  document.getElementById("qContinue").classList.add("hidden");
+  const body=document.getElementById("qBody"); body.innerHTML="";
+  m.quiz.forEach((item,qi)=>{
+    const q=document.createElement("div"); q.className="q";
+    q.innerHTML=`<div class="qtext"><span class="qn">${qi+1}.</span><span>${escapeHtml(item.q)}</span></div>`+
+      item.o.map((op,oi)=>`<div class="opt" data-q="${qi}" data-o="${oi}"><span class="rd"></span><span class="ox">${escapeHtml(op)}</span></div>`).join("");
+    body.appendChild(q);
+  });
+  body.querySelectorAll(".opt").forEach(el=>{ el.onclick=()=>{ const qi=+el.dataset.q, oi=+el.dataset.o;
+    quizAnswers[qi]=oi; body.querySelectorAll(`.opt[data-q="${qi}"]`).forEach(x=>x.classList.remove("sel")); el.classList.add("sel"); }; });
+  go("quiz");
+}
+function submitQuiz(){
+  const m=COURSE[cur.modIdx];
+  if(quizAnswers.includes(null)){ toast("Please answer every question first."); return; }
+  let correct=0; const body=document.getElementById("qBody");
+  m.quiz.forEach((item,qi)=>{ const chosen=quizAnswers[qi]; if(chosen===item.a) correct++;
+    body.querySelectorAll(`.opt[data-q="${qi}"]`).forEach(el=>{ const oi=+el.dataset.o;
+      if(oi===item.a) el.classList.add("correct"); else if(oi===chosen) el.classList.add("wrong");
+      el.style.pointerEvents="none"; }); });
+  const score=correct/m.quiz.length, st=state.modules[m.id];
+  st.quizScore = st.quizScore==null?score:Math.max(st.quizScore,score);
+  const passed=score>=PASS; if(passed) st.passed=true;
+  const res=document.getElementById("qResult");
+  res.className="quizresult "+(passed?"pass":"fail");
+  res.innerHTML=passed
+    ? `You scored ${correct}/${m.quiz.length} (${Math.round(score*100)}%). Module passed — nicely done.`
+    : `You scored ${correct}/${m.quiz.length} (${Math.round(score*100)}%). You need 70% to pass. Review the red answers and retake.`;
+  document.getElementById("qSubmit").classList.add("hidden");
+  document.getElementById("qRetake").classList.remove("hidden");
+  if(passed) document.getElementById("qContinue").classList.remove("hidden");
+  updateProgress();
+  toast(passed?"Module complete — remember to save your progress.":"Almost there — review and try again.");
+}
+function retakeQuiz(){ openQuiz(cur.modIdx); }
+
+/* =========================================================
+   FINISH + CERTIFICATE
+   ========================================================= */
+function renderFinish(){ document.getElementById("certNameInput").value=state.name; syncCertName(); checkFinishReady(); }
+wireChecks("finishChecks", checkFinishReady);
+function checkFinishReady(){
+  const all=[...document.querySelectorAll("#finishChecks .checkitem")].every(i=>i.classList.contains("on"));
+  const done=COURSE.every(m=>state.modules[m.id].passed);
+  document.getElementById("genCertBtn").disabled=!(all&&done);
+}
+function syncCertName(){ const n=document.getElementById("certNameInput").value.trim()||state.name; document.getElementById("certName").textContent=n; }
+function revealCert(){
+  const scored=COURSE.map(m=>state.modules[m.id].quizScore).filter(s=>s!=null);
+  const avg=Math.round(scored.reduce((a,b)=>a+b,0)/scored.length*100);
+  state.name=document.getElementById("certNameInput").value.trim()||state.name;
+  state.certIssued=true; state.certDate=new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+  document.getElementById("certName").textContent=state.name;
+  document.getElementById("certScore").textContent=avg+"%";
+  document.getElementById("certDate").textContent=state.certDate;
+  document.getElementById("finishName").textContent=state.name;
+  document.getElementById("certWrap").classList.remove("hidden");
+  updateHeader();
+  setTimeout(()=>document.getElementById("certWrap").scrollIntoView({behavior:"smooth",block:"start"}),100);
+  toast("Certificate ready — take your final photo with it!");
+}
+
+/* ---- Fallback: build a minimal A4-landscape PDF embedding a canvas image ---- */
+function downloadCertCanvasPDF(name,score,date){
+  // Render certificate to high-res canvas (A4 landscape ratio 297:210)
+  const scale=4, W=297*scale, H=210*scale, c=document.createElement("canvas");
+  c.width=W; c.height=H; const x=c.getContext("2d");
+  x.fillStyle="#fbf9f2"; x.fillRect(0,0,W,H);
+  x.strokeStyle="#1c6b4b"; x.lineWidth=6*scale/2; x.strokeRect(10*scale,10*scale,W-20*scale,H-20*scale);
+  x.strokeStyle="#c9a94e"; x.lineWidth=2*scale/2; x.strokeRect(14*scale,14*scale,W-28*scale,H-28*scale);
+  x.textAlign="center";
+  x.fillStyle="#1c6b4b"; x.beginPath(); x.arc(W/2,42*scale,13*scale,0,7); x.fill();
+  x.fillStyle="#fbf9f2"; x.beginPath(); x.arc(W/2,42*scale,10.2*scale,0,7); x.fill();
+  x.fillStyle="#1c6b4b"; x.font=`bold ${11*scale}px Georgia`;
+  x.fillText("FSM",W/2,40*scale); x.fillText("313",W/2,47*scale);
+  x.font=`bold ${20*scale}px Helvetica,Arial`; x.fillStyle="#1c6b4b";
+  x.fillText("CERTIFICATE OF COMPLETION",W/2,72*scale);
+  x.font=`${12*scale}px Helvetica,Arial`; x.fillStyle="#5c6b60";
+  x.fillText("This certifies that",W/2,86*scale);
+  x.font=`bold ${34*scale}px Georgia`; x.fillStyle="#14261c"; x.fillText(name,W/2,103*scale);
+  x.strokeStyle="#c9a94e"; x.lineWidth=1.2*scale; const nw=Math.min(160*scale,x.measureText(name).width+40*scale);
+  x.beginPath(); x.moveTo(W/2-nw/2,107*scale); x.lineTo(W/2+nw/2,107*scale); x.stroke();
+  x.font=`${12*scale}px Helvetica,Arial`; x.fillStyle="#41514a";
+  x.fillText("has successfully completed the self-paced program",W/2,119*scale);
+  x.font=`bold ${22*scale}px Helvetica,Arial`; x.fillStyle="#1c6b4b";
+  x.fillText("Sensory Evaluation Mastery",W/2,131*scale);
+  x.font=`italic ${10.5*scale}px Helvetica,Arial`; x.fillStyle="#41514a";
+  x.fillText("Difference Testing · Descriptive Analysis · Affective Methods · Reporting Results",W/2,139*scale);
+  x.font=`${10*scale}px Helvetica,Arial`; x.fillStyle="#5c6b60";
+  x.fillText(`Final average score: ${score}   ·   Modules completed: 4 of 4`,W/2,148*scale);
+  x.strokeStyle="#14261c"; x.lineWidth=1*scale;
+  x.beginPath(); x.moveTo(55*scale,178*scale); x.lineTo(110*scale,178*scale); x.stroke();
+  x.beginPath(); x.moveTo((W-110*scale),178*scale); x.lineTo((W-55*scale),178*scale); x.stroke();
+  x.font=`bold ${13*scale}px Georgia`; x.fillStyle="#14261c";
+  x.fillText("Course Instructor",82.5*scale,176*scale); x.fillText(date,(W-82.5*scale),176*scale);
+  x.font=`${8.5*scale}px Helvetica,Arial`; x.fillStyle="#5c6b60";
+  x.fillText("FSM 313 · Sensory Evaluation",82.5*scale,184*scale);
+  x.fillText("Date of completion",(W-82.5*scale),184*scale);
+
+  const jpg=c.toDataURL("image/jpeg",0.92);
+  const b64=jpg.split(",")[1];
+  const bin=atob(b64); const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  // Build a tiny PDF: A4 landscape (842 x 595 pt), one XObject image full-bleed
+  const PW=842, PH=595;
+  const enc=new TextEncoder();
+  const parts=[]; const offsets=[]; let pos=0;
+  function push(str){ const b=enc.encode(str); parts.push(b); pos+=b.length; }
+  function pushBytes(b){ parts.push(b); pos+=b.length; }
+  push("%PDF-1.4\n");
+  const objOffsets={};
+  function obj(n,body){ objOffsets[n]=pos; push(`${n} 0 obj\n${body}\nendobj\n`); }
+  obj(1,"<< /Type /Catalog /Pages 2 0 R >>");
+  obj(2,"<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+  obj(3,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /XObject << /Im0 5 0 R >> >> /Contents 4 0 R >>`);
+  const content=`q\n${PW} 0 0 ${PH} 0 0 cm\n/Im0 Do\nQ\n`;
+  obj(4,`<< /Length ${enc.encode(content).length} >>\nstream\n${content}endstream`);
+  // image object (stream binary)
+  objOffsets[5]=pos;
+  push(`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${bytes.length} >>\nstream\n`);
+  pushBytes(bytes); push("\nendstream\nendobj\n");
+  const xrefPos=pos;
+  let xref="xref\n0 6\n0000000000 65535 f \n";
+  for(let n=1;n<=5;n++){ xref+=String(objOffsets[n]).padStart(10,"0")+" 00000 n \n"; }
+  push(xref);
+  push(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF`);
+  let total=0; parts.forEach(p=>total+=p.length);
+  const out=new Uint8Array(total); let o=0; parts.forEach(p=>{ out.set(p,o); o+=p.length; });
+  const blob=new Blob([out],{type:"application/pdf"});
+  const a=document.createElement("a"); a.download="Certificate_"+name.replace(/\s+/g,"_")+".pdf";
+  a.href=URL.createObjectURL(blob); a.click();
+  toast("Certificate PDF downloaded.");
+}
+
+/* ---- A4 landscape PDF via jsPDF, drawn with vector primitives ---- */
+function downloadPDF(){
+  const name=document.getElementById("certName").textContent;
+  const score=document.getElementById("certScore").textContent;
+  const date=document.getElementById("certDate").textContent;
+  const JS = window.jspdf && window.jspdf.jsPDF;
+  if(!JS){ downloadCertCanvasPDF(name,score,date); return; }
+  const doc=new JS({orientation:"landscape",unit:"mm",format:"a4"}); // 297 x 210
+  const W=297,H=210, cx=W/2;
+  // background
+  doc.setFillColor(251,249,242); doc.rect(0,0,W,H,"F");
+  // outer + inner borders
+  doc.setDrawColor(28,107,75); doc.setLineWidth(1.6); doc.rect(10,10,W-20,H-20);
+  doc.setDrawColor(201,169,78); doc.setLineWidth(0.5); doc.rect(14,14,W-28,H-28);
+  // corner flourishes
+  doc.setDrawColor(201,169,78); doc.setLineWidth(0.8);
+  [[18,18,1],[W-18,18,-1],[18,H-18,1],[W-18,H-18,-1]].forEach(([x,y,d])=>{
+    doc.line(x,y,x+12*d,y); doc.line(x,y,x,y+ (y<H/2?12:-12));
+  });
+  // seal
+  doc.setFillColor(28,107,75); doc.circle(cx,42,13,"F");
+  doc.setFillColor(251,249,242); doc.circle(cx,42,10.2,"F");
+  doc.setTextColor(28,107,75); doc.setFont("times","bold"); doc.setFontSize(11);
+  doc.text("FSM",cx,41,{align:"center"}); doc.text("313",cx,47,{align:"center"});
+  // heading
+  doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.setTextColor(28,107,75);
+  doc.text("C E R T I F I C A T E   O F   C O M P L E T I O N",cx,72,{align:"center"});
+  doc.setFont("helvetica","normal"); doc.setFontSize(12); doc.setTextColor(92,107,96);
+  doc.text("This certifies that",cx,86,{align:"center"});
+  // name
+  doc.setFont("times","bold"); doc.setFontSize(34); doc.setTextColor(20,38,28);
+  doc.text(name,cx,102,{align:"center"});
+  doc.setDrawColor(201,169,78); doc.setLineWidth(0.6);
+  const nameW=Math.min(160, doc.getTextWidth(name)+40); doc.line(cx-nameW/2,106,cx+nameW/2,106);
+  // body
+  doc.setFont("helvetica","normal"); doc.setFontSize(12); doc.setTextColor(65,81,74);
+  doc.text("has successfully completed the self-paced program",cx,118,{align:"center"});
+  doc.setFont("helvetica","bold"); doc.setFontSize(22); doc.setTextColor(28,107,75);
+  doc.text("Sensory Evaluation Mastery",cx,130,{align:"center"});
+  doc.setFont("helvetica","italic"); doc.setFontSize(10.5); doc.setTextColor(65,81,74);
+  doc.text("Difference Testing  \u00B7  Descriptive Analysis  \u00B7  Affective Methods  \u00B7  Reporting Results",cx,138,{align:"center"});
+  doc.setFont("helvetica","normal"); doc.setFontSize(10); doc.setTextColor(92,107,96);
+  doc.text(`Final average score: ${score}   \u00B7   Modules completed: 4 of 4`,cx,147,{align:"center"});
+  // footer signature lines
+  doc.setDrawColor(20,38,28); doc.setLineWidth(0.4);
+  doc.line(55,178,110,178); doc.line(W-110,178,W-55,178);
+  doc.setFont("times","bold"); doc.setFontSize(13); doc.setTextColor(20,38,28);
+  doc.text("Course Instructor",82.5,176,{align:"center"});
+  doc.text(date,W-82.5,176,{align:"center"});
+  doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(92,107,96);
+  doc.text("FSM 313 \u00B7 Sensory Evaluation",82.5,183,{align:"center"});
+  doc.text("Date of completion",W-82.5,183,{align:"center"});
+  doc.save("Certificate_"+name.replace(/\s+/g,"_")+".pdf");
+  toast("Certificate PDF downloaded.");
+}
+
+/* =========================================================
+   SAVE / LOAD
+   ========================================================= */
+function saveProgress(){
+  if(!state.name){ toast("Enter your name first."); return; }
+  state.savedAt=new Date().toISOString();
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.download="SensoryLab_"+state.name.replace(/\s+/g,"_")+"_progress.json";
+  a.href=URL.createObjectURL(blob); a.click();
+  toast("Progress saved — keep this file to resume later.");
+}
+function loadProgress(ev){
+  const file=ev.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+      const data=JSON.parse(r.result);
+      if(!data.name||!data.modules) throw new Error("bad");
+      state.name=data.name; state.started=data.started||state.started;
+      state.predoc=!!data.predoc; state.certIssued=!!data.certIssued; state.certDate=data.certDate||null;
+      state.drillsDone=data.drillsDone||0;
+      COURSE.forEach(m=>{ if(data.modules[m.id]) state.modules[m.id]=Object.assign({stepsSeen:[],drills:{},quizScore:null,passed:false},data.modules[m.id]); });
+      document.getElementById("greetName").textContent=state.name;
+      updateHeader();
+      toast("Welcome back, "+state.name+"!");
+      if(state.predoc||state.certIssued||COURSE.some(m=>state.modules[m.id].passed)) go("dash");
+      else go("instructions");
+    }catch(e){ toast("Couldn't read that file. Make sure it's your SensoryLab .json."); }
+  };
+  r.readAsText(file); ev.target.value="";
+}
+
+/* =========================================================
+   HELPERS + INIT
+   ========================================================= */
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+let toastTimer;
+function toast(msg){ const t=document.getElementById("toast");
+  t.innerHTML=`<svg class="ic big ti" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>${escapeHtml(msg)}</span>`;
+  t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),3200);
+}
+
+/* expose handlers used by inline onclick */
+window.startNew=startNew; window.finishPredoc=finishPredoc; window.go=go;
+window.prevStep=prevStep; window.nextStep=nextStep;
+window.submitQuiz=submitQuiz; window.retakeQuiz=retakeQuiz;
+window.saveProgress=saveProgress; window.loadProgress=loadProgress;
+window.revealCert=revealCert; window.downloadPDF=downloadPDF; window.syncCertName=syncCertName;
+
+go("welcome");
+
+</script>
+</body>
+</html>
